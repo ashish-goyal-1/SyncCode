@@ -1,0 +1,35 @@
+{
+    "name": "synccode-client",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Real-time collaborative code editor - like Google Docs for code",
+    "author": "Ashish Goyal (https://github.com/ashish-goyal-1)",
+    "type": "module",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ashish-goyal-1/synccode.git"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@monaco-editor/react": "^4.6.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-hot-toast": "^2.4.1",
+        "react-router-dom": "^6.20.0",
+        "socket.io-client": "^4.7.2",
+        "uuid": "^9.0.1"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.37",
+        "@types/react-dom": "^18.2.15",
+        "@vitejs/plugin-react": "^4.2.0",
+        "autoprefixer": "^10.4.16",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.3.5",
+        "vite": "^5.0.0"
+    }
+}

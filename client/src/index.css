@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Dark mode (default) */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode */
+html.light body {
+  background-color: #ffffff;
+  color: #24292f;
+}
+
+html.light .bg-dark-900 {
+  background-color: #f6f8fa;
+}
+
+html.light .bg-dark-800 {
+  background-color: #ffffff;
+}
+
+html.light .bg-dark-700 {
+  background-color: #f6f8fa;
+}
+
+html.light .border-dark-600 {
+  border-color: #d0d7de;
+}
+
+html.light .text-gray-300,
+html.light .text-gray-400 {
+  color: #57606a;
+}
+
+html.light .text-gray-100 {
+  color: #24292f;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #161b22;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f6f8fa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #d0d7de;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #afb8c1;
+}
+
+/* Monaco editor container */
+.editor-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Terminal styles */
+.terminal {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #58a6ff 0%, #a371f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(22, 27, 34, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(48, 54, 61, 0.5);
+}
+
+html.light .glass {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(208, 215, 222, 0.5);
+}
+
+/* Button hover effects */
+.btn-primary {
+  @apply bg-accent-blue text-white px-4 py-2 rounded-lg font-medium;
+  @apply hover:bg-blue-500 transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-accent-blue focus:ring-offset-2 focus:ring-offset-dark-900;
+}
+
+.btn-secondary {
+  @apply bg-dark-700 text-gray-300 px-4 py-2 rounded-lg font-medium;
+  @apply hover:bg-dark-600 transition-all duration-200 border border-dark-600;
+  @apply focus:outline-none focus:ring-2 focus:ring-dark-500 focus:ring-offset-2 focus:ring-offset-dark-900;
+}
+
+html.light .btn-secondary {
+  @apply bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200;
+}
+
+.btn-success {
+  @apply bg-accent-green text-white px-4 py-2 rounded-lg font-medium;
+  @apply hover:bg-green-600 transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-accent-green focus:ring-offset-2 focus:ring-offset-dark-900;
+}
+
+/* Input styles */
+.input-dark {
+  @apply bg-dark-800 border border-dark-600 rounded-lg px-4 py-3;
+  @apply text-gray-100 placeholder-gray-500;
+  @apply focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue;
+  @apply transition-all duration-200;
+}
+
+html.light .input-dark {
+  @apply bg-white border-gray-300 text-gray-900 placeholder-gray-400;
+}
+
+/* Card styles */
+.card {
+  @apply bg-dark-800 border border-dark-600 rounded-xl p-6;
+}
+
+html.light .card {
+  @apply bg-white border-gray-200 shadow-lg;
+}
+
+/* Remote cursor styles (injected dynamically, this is fallback) */
+.remote-cursor-label {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px 3px 3px 0;
+  color: white;
+  z-index: 100;
+  pointer-events: none;
+}
