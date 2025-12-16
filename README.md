@@ -2,7 +2,10 @@
 
 A real-time collaborative code editor for **coding interviews**, **pair programming**, and **teaching**. Built with React, Yjs CRDT, and Monaco Editor.
 
+🚀 **[Live Demo](https://synccode-five.vercel.app)** | 📦 **[Backend API](https://synccode-server-3xzv.onrender.com)**
+
 > 💡 **Focus:** Single-file collaboration optimized for algorithm problems and code snippets — not a full IDE.
+
 
 ## 📸 Screenshots
 
