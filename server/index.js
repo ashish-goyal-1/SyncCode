@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const WebSocket = require('ws');
+const Y = require('yjs');
 require('dotenv').config();
 
 const app = express();
@@ -12,11 +14,87 @@ const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const server = http.createServer(app);
+
+// Socket.io server for user presence, lock state, and language changes
 const io = new Server(server, {
   cors: {
     origin: CLIENT_URL,
     methods: ['GET', 'POST'],
   },
+});
+
+// WebSocket server for Yjs CRDT sync
+// This handles real-time code collaboration with automatic conflict resolution
+const wss = new WebSocket.Server({ noServer: true });
+
+// Store Yjs documents per room
+const yjsDocs = new Map();
+
+const getYDoc = (docName) => {
+  if (!yjsDocs.has(docName)) {
+    const doc = new Y.Doc();
+    yjsDocs.set(docName, { doc, clients: new Set() });
+  }
+  return yjsDocs.get(docName);
+};
+
+// Handle WebSocket upgrade requests
+server.on('upgrade', (request, socket, head) => {
+  // Route /yjs/* connections to Yjs WebSocket server
+  if (request.url && request.url.startsWith('/yjs')) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  }
+  // Socket.io handles its own upgrade internally
+});
+
+// Set up Yjs WebSocket connections
+wss.on('connection', (ws, request) => {
+  // Extract room name from URL path: /yjs/room-id -> room-id
+  const docName = request.url?.replace('/yjs/', '') || 'default';
+  console.log(`Yjs client connected to room: ${docName}`);
+
+  const { doc, clients } = getYDoc(docName);
+  clients.add(ws);
+
+  // Send current document state to new client
+  const state = Y.encodeStateAsUpdate(doc);
+  ws.send(state);
+
+  // Handle incoming updates from client
+  ws.on('message', (message) => {
+    try {
+      const update = new Uint8Array(message);
+      Y.applyUpdate(doc, update);
+
+      // Broadcast to other clients in same room
+      clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    } catch (err) {
+      console.error('Error applying Yjs update:', err);
+    }
+  });
+
+  // Cleanup on disconnect
+  ws.on('close', () => {
+    clients.delete(ws);
+    console.log(`Yjs client disconnected from room: ${docName}`);
+
+    // Clean up empty rooms after 5 minutes
+    if (clients.size === 0) {
+      setTimeout(() => {
+        const room = yjsDocs.get(docName);
+        if (room && room.clients.size === 0) {
+          yjsDocs.delete(docName);
+          console.log(`Yjs room ${docName} cleaned up`);
+        }
+      }, 5 * 60 * 1000);
+    }
+  });
 });
 
 // In-memory storage for rooms

@@ -1,125 +1,91 @@
 import { useEffect, useRef, useState } from 'react';
 import MonacoEditor from '@monaco-editor/react';
+import { MonacoBinding } from 'y-monaco';
 
 /**
  * Editor component - Monaco Editor wrapper for real-time collaboration
- * with remote cursor presence support, theme switching, and read-only mode
+ * Now uses Yjs for CRDT-based conflict-free sync with y-monaco binding
+ * 
+ * Props:
+ * - yText: Yjs Y.Text shared type for code content
+ * - awareness: Yjs awareness instance for cursor presence
+ * - language: Programming language for syntax highlighting
+ * - theme: 'dark' or 'light'
+ * - readOnly: Whether editor is in read-only mode
+ * - onEditorReady: Callback when Monaco editor is mounted
  */
-function Editor({ value, onChange, language, editorRef, remoteCursors, onCursorChange, theme = 'dark', readOnly = false }) {
+function Editor({
+    yText,
+    awareness,
+    language,
+    theme = 'dark',
+    readOnly = false,
+    onEditorReady
+}) {
+    const editorRef = useRef(null);
     const monacoRef = useRef(null);
-    const decorationsRef = useRef([]);
+    const bindingRef = useRef(null);
     const [isEditorReady, setIsEditorReady] = useState(false);
 
     // Map our theme to Monaco themes
     const monacoTheme = theme === 'dark' ? 'vs-dark' : 'light';
 
     const handleEditorMount = (editor, monaco) => {
-        if (editorRef) {
-            editorRef.current = editor;
-        }
+        editorRef.current = editor;
         monacoRef.current = monaco;
         setIsEditorReady(true);
         editor.focus();
 
-        // Listen for cursor position changes
-        editor.onDidChangeCursorPosition((e) => {
-            if (onCursorChange) {
-                onCursorChange({
-                    lineNumber: e.position.lineNumber,
-                    column: e.position.column,
-                });
-            }
-        });
-    };
-
-    const handleChange = (newValue) => {
-        if (onChange) {
-            onChange(newValue);
+        // Notify parent that editor is ready (for ref access if needed)
+        if (onEditorReady) {
+            onEditorReady(editor);
         }
     };
 
-    // Update remote cursor decorations
+    // Set up Yjs Monaco binding when both editor and yText are ready
     useEffect(() => {
-        if (!isEditorReady || !editorRef?.current || !monacoRef.current) return;
+        if (!isEditorReady || !editorRef.current || !yText) {
+            return;
+        }
 
         const editor = editorRef.current;
-        const monaco = monacoRef.current;
+        const model = editor.getModel();
 
-        // Clear previous decorations
-        decorationsRef.current = editor.deltaDecorations(decorationsRef.current, []);
+        if (!model) return;
 
-        if (!remoteCursors || remoteCursors.length === 0) return;
+        // Create Monaco binding - this is the magic!
+        // It syncs the Y.Text with Monaco's model automatically
+        const binding = new MonacoBinding(
+            yText,
+            model,
+            new Set([editor]),
+            awareness || null
+        );
 
-        // Create new decorations for each remote cursor
-        const newDecorations = remoteCursors.map((cursor) => {
-            const cursorClassName = `remote-cursor-${cursor.socketId.replace(/[^a-zA-Z0-9]/g, '')}`;
+        bindingRef.current = binding;
 
-            const styleId = `cursor-style-${cursor.socketId}`;
-            let styleEl = document.getElementById(styleId);
-            if (!styleEl) {
-                styleEl = document.createElement('style');
-                styleEl.id = styleId;
-                document.head.appendChild(styleEl);
-            }
-            styleEl.textContent = `
-        .${cursorClassName} {
-          background-color: ${cursor.color} !important;
-          width: 2px !important;
-          margin-left: -1px;
-        }
-        .${cursorClassName}-label {
-          background-color: ${cursor.color} !important;
-          color: white !important;
-          padding: 1px 6px !important;
-          border-radius: 3px 3px 3px 0 !important;
-          font-size: 11px !important;
-          font-weight: 500 !important;
-          position: relative !important;
-          top: -18px !important;
-          white-space: nowrap !important;
-          z-index: 100 !important;
-        }
-      `;
-
-            return {
-                range: new monaco.Range(
-                    cursor.cursor.lineNumber,
-                    cursor.cursor.column,
-                    cursor.cursor.lineNumber,
-                    cursor.cursor.column
-                ),
-                options: {
-                    className: cursorClassName,
-                    beforeContentClassName: `${cursorClassName}-label`,
-                    before: {
-                        content: cursor.username,
-                        inlineClassName: `${cursorClassName}-label`,
-                    },
-                    stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
-                },
-            };
-        });
-
-        decorationsRef.current = editor.deltaDecorations([], newDecorations);
-
+        // Cleanup binding on unmount or when yText changes
         return () => {
-            remoteCursors.forEach((cursor) => {
-                const styleEl = document.getElementById(`cursor-style-${cursor.socketId}`);
-                if (styleEl) {
-                    styleEl.remove();
-                }
-            });
+            if (bindingRef.current) {
+                bindingRef.current.destroy();
+                bindingRef.current = null;
+            }
         };
-    }, [remoteCursors, isEditorReady]);
+    }, [isEditorReady, yText, awareness]);
+
+    // Handle readOnly changes
+    useEffect(() => {
+        if (editorRef.current) {
+            editorRef.current.updateOptions({ readOnly });
+        }
+    }, [readOnly]);
 
     return (
         <div className="h-full w-full">
             <MonacoEditor
                 height="100%"
                 language={language}
-                value={value}
                 theme={monacoTheme}
-                onChange={handleChange}
                 onMount={handleEditorMount}
                 options={{
                     fontSize: 14,

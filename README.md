@@ -1,6 +1,8 @@
 # SyncCode
 
-A real-time collaborative code editor built with React, Socket.io, and Monaco Editor. Like Google Docs, but for code.
+A real-time collaborative code editor for **coding interviews**, **pair programming**, and **teaching**. Built with React, Yjs CRDT, and Monaco Editor.
+
+> 💡 **Focus:** Single-file collaboration optimized for algorithm problems and code snippets — not a full IDE.
 
 ## 📸 Screenshots
 
@@ -15,7 +17,8 @@ A real-time collaborative code editor built with React, Socket.io, and Monaco Ed
 
 ## ✨ Features
 
-### Real-Time Collaboration
+### Real-Time Collaboration (CRDT-Powered)
+- **Conflict-Free Sync** — No data loss when multiple users type simultaneously (Yjs CRDT)
 - **Live Code Sync** — See changes instantly as others type
 - **Cursor Presence** — View other users' cursors with name labels
 - **User Avatars** — Colored initials for each participant
@@ -42,9 +45,12 @@ A real-time collaborative code editor built with React, Socket.io, and Monaco Ed
 |-------|------------|
 | Frontend | React 18, Vite, Tailwind CSS |
 | Editor | Monaco Editor (VS Code engine) |
-| Real-Time | Socket.io |
-| Backend | Node.js, Express |
+| Real-Time Sync | **Yjs CRDT** + y-monaco binding |
+| Presence & Control | Socket.io |
+| Backend | Node.js, Express, y-websocket |
 | Execution | Piston API |
+
+> 🔬 **Why Yjs?** Same CRDT technology used by Figma, VS Code Live Share, and CodeSandbox for conflict-free collaboration.
 
 ## 🚀 Quick Start
 
@@ -124,11 +130,12 @@ synccode/
 ├── client/                 # React frontend
 │   ├── src/
 │   │   ├── components/     # Reusable components
-│   │   │   ├── Editor.jsx      # Monaco wrapper + cursors
+│   │   │   ├── Editor.jsx      # Monaco + Yjs binding
 │   │   │   ├── Client.jsx      # User avatar
 │   │   │   ├── Terminal.jsx    # Output panel
-│   │   │   ├── ThemeToggle.jsx # Dark/light switch
-│   │   │   └── ErrorBoundary.jsx
+│   │   │   └── ThemeToggle.jsx # Dark/light switch
+│   │   ├── hooks/
+│   │   │   └── useYjs.js       # Yjs CRDT hook
 │   │   ├── pages/
 │   │   │   ├── Home.jsx        # Join room form
 │   │   │   └── EditorPage.jsx  # Main editor view
@@ -136,28 +143,48 @@ synccode/
 │   └── package.json
 │
 └── server/                 # Node.js backend
-    ├── index.js            # Socket.io server
+    ├── index.js            # Socket.io + Yjs WebSocket server
     └── package.json
 ```
 
-## 🔌 Socket Events
+## 🔌 Architecture
+
+| Protocol | Purpose |
+|----------|--------|
+| **y-websocket** | CRDT code sync (automatic conflict resolution) |
+| **Socket.io** | User presence, language change, room lock/unlock |
+
+### Socket.io Events
 
 | Event | Direction | Description |
 |-------|-----------|-------------|
 | `join` | Client → Server | Join a room |
 | `joined` | Server → All | User list update |
-| `code_change` | Bidirectional | Code sync |
-| `cursor_change` | Bidirectional | Cursor position |
 | `language_change` | Bidirectional | Language switch |
 | `toggle_lock` | Client → Server | Lock/unlock room |
 | `lock_changed` | Server → All | Lock state update |
 
 ## 🎯 Use Cases
 
-- **Coding Interviews** — Host locks room, candidate codes
-- **Pair Programming** — Real-time collaboration
-- **Teaching** — Instructor controls, students observe
-- **Code Reviews** — Walk through code together
+SyncCode is optimized for **single-file collaboration** scenarios:
+
+| Use Case | How It Helps |
+|----------|-------------|
+| **Coding Interviews** | Host locks room, candidate codes, no data loss if both type |
+| **Algorithm Practice** | LeetCode-style problems with a partner |
+| **Teaching** | Instructor controls, students observe in real-time |
+| **Code Reviews** | Walk through a function together |
+
+> 💡 **Focused on:** Single-file collaboration — perfect for interviews and learning.
+
+## 🗺️ Roadmap
+
+Planned for future versions:
+
+- [ ] Export to GitHub Gist (shareable permanent links)
+- [ ] User accounts & session history
+- [ ] Interview timer with sync
+- [ ] Voice chat integration
 
 ## 👤 Author
 
@@ -172,6 +199,7 @@ MIT License - feel free to use for your own projects!
 
 ## 🙏 Acknowledgments
 
+- [Yjs](https://github.com/yjs/yjs) — CRDT framework for conflict-free collaboration
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/) — VS Code's editor
 - [Piston API](https://github.com/engineer-man/piston) — Code execution engine
 - [Socket.io](https://socket.io/) — Real-time communication

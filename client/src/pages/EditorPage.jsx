@@ -7,6 +7,7 @@ import Client from '../components/Client';
 import Terminal from '../components/Terminal';
 import StatusBar from '../components/StatusBar';
 import { ThemeToggle, useTheme } from '../components/ThemeToggle';
+import { useYjs } from '../hooks/useYjs';
 
 // Language options for the editor
 const LANGUAGES = [
@@ -79,25 +80,36 @@ function EditorPage() {
     const editorRef = useRef(null);
     const { theme } = useTheme();
 
+    // Get username from navigation state
+    const username = location.state?.username;
+
+    // Generate a random color for this user
+    const [userColor] = useState(() => {
+        const colors = [
+            '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E',
+            '#14B8A6', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6',
+            '#A855F7', '#EC4899', '#F43F5E',
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    });
+
+    // Yjs hook for CRDT-based real-time sync
+    const { yText, awareness, isConnected: yjsConnected } = useYjs(roomId, username, userColor);
+
     // State
     const [clients, setClients] = useState([]);
-    const [code, setCode] = useState('');
     const [language, setLanguage] = useState('javascript');
     const [output, setOutput] = useState('');
     const [isRunning, setIsRunning] = useState(false);
     const [isError, setIsError] = useState(false);
     const [stdin, setStdin] = useState('');
-    const [remoteCursors, setRemoteCursors] = useState([]);
 
     // Read-Only Mode state
     const [hostId, setHostId] = useState(null);
     const [isLocked, setIsLocked] = useState(false);
 
-    // Flag to prevent infinite loops during sync
-    const isRemoteUpdate = useRef(false);
-
-    // Get username from navigation state
-    const username = location.state?.username;
+    // Track if initial code has been set
+    const initialCodeSet = useRef(false);
 
     // Computed: Am I the host?
     const isHost = socket.id === hostId;
@@ -112,6 +124,18 @@ function EditorPage() {
             navigate('/');
         }
     }, [username, navigate]);
+
+    // Set initial code when Yjs is ready (only for first user in room)
+    useEffect(() => {
+        if (yText && !initialCodeSet.current && isHost) {
+            // Only set template if document is empty
+            if (yText.length === 0) {
+                const template = LANGUAGE_TEMPLATES[language] || '';
+                yText.insert(0, template);
+            }
+            initialCodeSet.current = true;
+        }
+    }, [yText, isHost, language]);
 
     // Socket connection and event handlers
     useEffect(() => {
@@ -134,25 +158,11 @@ function EditorPage() {
             }
         };
 
-        // Handle code sync (initial sync when joining)
-        const handleSyncCode = ({ code: syncedCode, language: syncedLanguage, hostId: roomHostId, isLocked: roomLocked }) => {
-            isRemoteUpdate.current = true;
-            setCode(syncedCode);
+        // Handle code sync (for initial language only - code is now via Yjs)
+        const handleSyncCode = ({ language: syncedLanguage, hostId: roomHostId, isLocked: roomLocked }) => {
             setLanguage(syncedLanguage);
             if (roomHostId) setHostId(roomHostId);
             if (roomLocked !== undefined) setIsLocked(roomLocked);
-            setTimeout(() => {
-                isRemoteUpdate.current = false;
-            }, 0);
-        };
-
-        // Handle real-time code changes from others
-        const handleCodeChange = ({ code: newCode }) => {
-            isRemoteUpdate.current = true;
-            setCode(newCode);
-            setTimeout(() => {
-                isRemoteUpdate.current = false;
-            }, 0);
         };
 
         // Handle language changes from others
@@ -163,23 +173,9 @@ function EditorPage() {
             });
         };
 
-        // Handle remote cursor updates
-        const handleCursorChange = ({ socketId, username, color, cursor }) => {
-            setRemoteCursors((prev) => {
-                const existing = prev.findIndex((c) => c.socketId === socketId);
-                if (existing !== -1) {
-                    const updated = [...prev];
-                    updated[existing] = { socketId, username, color, cursor };
-                    return updated;
-                }
-                return [...prev, { socketId, username, color, cursor }];
-            });
-        };
-
         // Handle user disconnect
         const handleDisconnected = ({ socketId, username: leftUser }) => {
             setClients((prev) => prev.filter((client) => client.socketId !== socketId));
-            setRemoteCursors((prev) => prev.filter((c) => c.socketId !== socketId));
             toast(`${leftUser} left the room`, {
                 icon: '👋',
             });
@@ -210,9 +206,7 @@ function EditorPage() {
         // Register event listeners
         socket.on('joined', handleJoined);
         socket.on('sync_code', handleSyncCode);
-        socket.on('code_change', handleCodeChange);
         socket.on('language_change', handleLanguageChange);
-        socket.on('cursor_change', handleCursorChange);
         socket.on('disconnected', handleDisconnected);
         socket.on('lock_changed', handleLockChanged);
         socket.on('host_changed', handleHostChanged);
@@ -228,9 +222,7 @@ function EditorPage() {
         return () => {
             socket.off('joined', handleJoined);
             socket.off('sync_code', handleSyncCode);
-            socket.off('code_change', handleCodeChange);
             socket.off('language_change', handleLanguageChange);
-            socket.off('cursor_change', handleCursorChange);
             socket.off('disconnected', handleDisconnected);
             socket.off('lock_changed', handleLockChanged);
             socket.off('host_changed', handleHostChanged);
@@ -250,23 +242,7 @@ function EditorPage() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [code, language, stdin]);
-
-    // Handle local code changes
-    const handleCodeChange = useCallback((newCode) => {
-        if (isRemoteUpdate.current) return;
-        if (!canEdit) {
-            toast.error('Room is locked. Only the host can edit.');
-            return;
-        }
-        setCode(newCode);
-        socket.emit('code_change', { roomId, code: newCode });
-    }, [roomId, canEdit]);
-
-    // Handle cursor position changes
-    const handleCursorChange = useCallback((cursor) => {
-        socket.emit('cursor_change', { roomId, cursor });
-    }, [roomId]);
+    }, [language, stdin, yText]);
 
     // Handle language change
     const handleLanguageChange = (e) => {
@@ -278,11 +254,15 @@ function EditorPage() {
         const newCode = LANGUAGE_TEMPLATES[newLanguage] || '';
 
         setLanguage(newLanguage);
-        setCode(newCode);
 
-        // Emit both language and code change
+        // Update Yjs document with new template
+        if (yText) {
+            yText.delete(0, yText.length);
+            yText.insert(0, newCode);
+        }
+
+        // Emit language change to other users
         socket.emit('language_change', { roomId, language: newLanguage });
-        socket.emit('code_change', { roomId, code: newCode });
     };
 
     // Toggle room lock (host only)
@@ -310,6 +290,9 @@ function EditorPage() {
         const extension = langConfig?.extension || 'txt';
         const filename = `synccode.${extension}`;
 
+        // Get code from Yjs document
+        const code = yText ? yText.toString() : '';
+
         const blob = new Blob([code], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -325,6 +308,9 @@ function EditorPage() {
 
     // Run code using Piston API
     const runCode = async () => {
+        // Get code from Yjs document
+        const code = yText ? yText.toString() : '';
+
         if (!code.trim()) {
             toast.error('Please write some code first');
             return;
@@ -380,6 +366,11 @@ function EditorPage() {
         navigate('/');
     };
 
+    // Handle when editor is ready
+    const handleEditorReady = (editor) => {
+        editorRef.current = editor;
+    };
+
     if (!username) {
         return null;
     }
@@ -396,6 +387,12 @@ function EditorPage() {
                         </svg>
                     </div>
                     <span className="text-xl font-bold gradient-text">SyncCode</span>
+
+                    {/* Yjs Connection Status */}
+                    <span className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full ${yjsConnected ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                        <span className={`w-2 h-2 rounded-full ${yjsConnected ? 'bg-green-400' : 'bg-yellow-400 animate-pulse'}`}></span>
+                        {yjsConnected ? 'Synced' : 'Connecting...'}
+                    </span>
 
                     {/* Lock Status Badge */}
                     {isLocked && (
@@ -553,14 +550,12 @@ function EditorPage() {
                             </div>
                         )}
                         <Editor
-                            value={code}
-                            onChange={handleCodeChange}
+                            yText={yText}
+                            awareness={awareness}
                             language={language}
-                            editorRef={editorRef}
-                            remoteCursors={remoteCursors}
-                            onCursorChange={handleCursorChange}
                             theme={theme}
                             readOnly={!canEdit}
+                            onEditorReady={handleEditorReady}
                         />
                     </div>
 
