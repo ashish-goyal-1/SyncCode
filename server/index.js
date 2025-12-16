@@ -18,8 +18,25 @@ const server = http.createServer(app);
 // Socket.io server for user presence, lock state, and language changes
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+
+      // Normalize URLs (remove trailing slashes)
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      const normalizedClientUrl = CLIENT_URL.replace(/\/$/, '');
+
+      // Allow if origin matches CLIENT_URL or is localhost for development
+      if (normalizedOrigin === normalizedClientUrl ||
+        origin.includes('localhost') ||
+        origin.includes('vercel.app')) {
+        return callback(null, true);
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
