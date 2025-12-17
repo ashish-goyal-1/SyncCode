@@ -173,3 +173,52 @@ html.light .card {
   z-index: 100;
   pointer-events: none;
 }
+
+/* ==========================================
+   MODERN CURSOR PRESENCE STYLES
+   - Hides default y-monaco cursors
+   - Styles for caret, name flags, and gutter bars
+   ========================================== */
+
+/* Hide default y-monaco remote cursors (we render our own) */
+.yRemoteSelection {
+  display: none !important;
+}
+
+.yRemoteSelectionHead {
+  display: none !important;
+}
+
+.yRemoteSelectionHead::after {
+  display: none !important;
+}
+
+/* Base styles for modern caret cursors */
+[class*="-caret"] {
+  position: relative;
+  display: inline-block;
+  height: 100% !important;
+  animation: cursor-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes cursor-blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Base styles for name flags - ensure proper positioning */
+[class*="-name"] {
+  position: relative;
+}
+
+/* Ensure gutter decorations are visible */
+.monaco-editor .margin-view-overlays [class*="-gutter"] {
+  opacity: 1 !important;
+}

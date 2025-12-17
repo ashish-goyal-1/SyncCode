@@ -4,8 +4,23 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 
 🚀 **[Live Demo](https://synccode-five.vercel.app)** | 📦 **[Backend API](https://synccode-server-3xzv.onrender.com)**
 
+> ⚠️ **Note:** The server is hosted on Render's free tier. Please allow **50-60 seconds** for the initial connection to wake up.
+
 > 💡 **Focus:** Single-file collaboration optimized for algorithm problems and code snippets — not a full IDE.
 
+## 📑 Table of Contents
+
+- [Screenshots](#-screenshots)
+- [Features](#-features)
+- [Tech Stack](#️-tech-stack)
+- [Quick Start](#-quick-start)
+- [Project Structure](#-project-structure)
+- [Architecture](#-architecture)
+- [Use Cases](#-use-cases)
+- [Roadmap](#️-roadmap)
+- [Author](#-author)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
 
 ## 📸 Screenshots
 
@@ -15,8 +30,8 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 ### Editor with Code Execution
 ![Editor](./screenshots/editor.png)
 
-### Two-User Collaboration
-![Two User Collaboration](./screenshots/two-user-editor.png)
+### Multi-User Collaboration
+![Multi-User Collaboration](./screenshots/multi-user-editor.png)
 
 ## ✨ Features
 
@@ -41,6 +56,11 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 - **Download Code** — Export with correct file extension
 - **Keyboard Shortcuts** — `Ctrl+Enter` to run code
 - **Language Templates** — Valid boilerplate when switching languages
+- **Smart Invite Links** — Share room URL, auto-fills Room ID for invitees
+- **Latency Indicator** — Real-time ping display (⚡ 0ms) with color coding
+- **Dynamic Page Title** — Browser tab shows room context
+- **Desktop Warning** — Recommends larger screen on mobile devices
+- **Room Chat** — Built-in messaging with history
 
 ## 🛠️ Tech Stack
 
@@ -152,10 +172,14 @@ synccode/
 
 ## 🔌 Architecture
 
-| Protocol | Purpose |
-|----------|--------|
-| **y-websocket** | CRDT code sync (automatic conflict resolution) |
-| **Socket.io** | User presence, language change, room lock/unlock |
+SyncCode uses a **Dual-Channel Architecture** to optimize performance:
+
+| Channel | Purpose |
+|---------|--------|
+| **Socket.io** | Lightweight events (chat, cursors, room state) |
+| **y-websocket** | Heavy CRDT document syncing |
+
+> 🔧 This separation ensures that chat messages or cursor movements never block the code synchronization thread.
 
 ### Socket.io Events
 
@@ -166,6 +190,8 @@ synccode/
 | `language_change` | Bidirectional | Language switch |
 | `toggle_lock` | Client → Server | Lock/unlock room |
 | `lock_changed` | Server → All | Lock state update |
+| `ping` | Client → Server | Latency measurement |
+| `chat_message` | Bidirectional | Room chat messages |
 
 ## 🎯 Use Cases
 
@@ -184,10 +210,12 @@ SyncCode is optimized for **single-file collaboration** scenarios:
 
 Planned for future versions:
 
-- [ ] Export to GitHub Gist (shareable permanent links)
-- [ ] User accounts & session history
+- [ ] Persistent storage (MongoDB/Redis)
+- [ ] User authentication & session history
+- [ ] Video/voice chat integration (WebRTC)
+- [ ] Multiple files/tabs support
+- [ ] Export to GitHub Gist
 - [ ] Interview timer with sync
-- [ ] Voice chat integration
 
 ## 👤 Author
 

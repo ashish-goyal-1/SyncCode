@@ -50,7 +50,7 @@ export function useYjs(roomId, username, userColor) {
         // Set up awareness (cursor presence)
         const awareness = provider.awareness;
         awareness.setLocalStateField('user', {
-            name: username,
+            username: username,  // Must match what Editor.jsx expects
             color: userColor || '#3B82F6',
         });
 

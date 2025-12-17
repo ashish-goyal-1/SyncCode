@@ -118,12 +118,20 @@ wss.on('connection', (ws, request) => {
 // roomId -> { code, language, users, hostId, isLocked }
 const rooms = new Map();
 
-// Generate a random color for user avatars
+// Generate distinct, bright colors for user avatars
 const getRandomColor = () => {
   const colors = [
-    '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E',
-    '#14B8A6', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6',
-    '#A855F7', '#EC4899', '#F43F5E',
+    '#FF3B30', // Vivid Red
+    '#FF9500', // Bright Orange
+    '#FFCC00', // Sunny Yellow
+    '#4CD964', // Fresh Green
+    '#5AC8FA', // Sky Blue
+    '#007AFF', // Deep Blue
+    '#5856D6', // Purple
+    '#FF2D55', // Pink
+    '#A2845E', // Brown
+    '#00C7BE', // Teal
+    '#AF52DE', // Violet
   ];
   return colors[Math.floor(Math.random() * colors.length)];
 };
@@ -131,8 +139,13 @@ const getRandomColor = () => {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
+  // Simple ping for latency measurement
+  socket.on('ping', (callback) => {
+    if (typeof callback === 'function') callback();
+  });
+
   // Handle user joining a room
-  socket.on('join', ({ roomId, username }) => {
+  socket.on('join', ({ roomId, username, color }) => {
     socket.join(roomId);
 
     // Initialize room if it doesn't exist
@@ -144,13 +157,15 @@ console.log("Hello, SyncCode!");
 `,
         language: 'javascript',
         users: new Map(),
+        messages: [], // Chat history storage
         hostId: socket.id, // First user becomes host
         isLocked: false,
       });
     }
 
     const room = rooms.get(roomId);
-    const userColor = getRandomColor();
+    // Use client's color for perfect sync, fallback to random if not provided
+    const userColor = color || getRandomColor();
     const isHost = room.hostId === socket.id || isNewRoom;
 
     // Update hostId if this is a new room
@@ -177,12 +192,13 @@ console.log("Hello, SyncCode!");
       isLocked: room.isLocked,
     });
 
-    // Send the current code, language, and lock state to the new user
+    // Send the current code, language, lock state, and chat history to the new user
     socket.emit('sync_code', {
       code: room.code,
       language: room.language,
       hostId: room.hostId,
       isLocked: room.isLocked,
+      messages: room.messages, // Send chat history
     });
 
     console.log(`${username} joined room: ${roomId}${isNewRoom ? ' (as host)' : ''}`);
@@ -222,17 +238,32 @@ console.log("Hello, SyncCode!");
   });
 
   // Handle cursor position updates
-  socket.on('cursor_change', ({ roomId, cursor }) => {
+  socket.on('cursor_change', ({ roomId, username, color, lineNumber, column }) => {
     const room = rooms.get(roomId);
     if (room && room.users.has(socket.id)) {
       const user = room.users.get(socket.id);
       // Broadcast cursor position to all other users in the room
-      socket.in(roomId).emit('cursor_change', {
+      socket.in(roomId).emit('cursor_update', {
         socketId: socket.id,
-        username: user.username,
-        color: user.color,
-        cursor, // { lineNumber, column }
+        username: username || user.username,
+        color: color || user.color,
+        lineNumber,
+        column,
       });
+    }
+  });
+
+  // Handle chat messages with history storage
+  socket.on('send_message', ({ roomId, message, username, timestamp }) => {
+    const room = rooms.get(roomId);
+    if (room) {
+      const msgData = { username, message, timestamp, isSystem: false };
+
+      // Store in chat history
+      room.messages.push(msgData);
+
+      // Broadcast to everyone in the room
+      io.in(roomId).emit('receive_message', msgData);
     }
   });
 

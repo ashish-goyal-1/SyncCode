@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 
@@ -7,6 +7,17 @@ function Home() {
     const [roomId, setRoomId] = useState('');
     const [username, setUsername] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+    const usernameInputRef = useRef(null);
+
+    // Auto-fill Room ID if redirected from invite link
+    useEffect(() => {
+        if (location.state?.roomId) {
+            setRoomId(location.state.roomId);
+            // Auto-focus username field since Room ID is already filled
+            setTimeout(() => usernameInputRef.current?.focus(), 100);
+        }
+    }, [location.state]);
 
     const generateRoomId = () => {
         const newRoomId = uuidv4();
@@ -94,6 +105,7 @@ function Home() {
                             </label>
                             <input
                                 type="text"
+                                ref={usernameInputRef}
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 onKeyPress={handleKeyPress}
