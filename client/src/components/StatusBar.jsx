@@ -10,12 +10,12 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
     };
 
     return (
-        <div className="h-8 bg-dark-800 border-t border-dark-600 flex items-center justify-between px-4 select-none">
+        <div className="h-8 bg-gray-100 dark:bg-dark-800 border-t border-gray-200 dark:border-dark-600 flex items-center justify-between px-4 select-none transition-colors duration-200">
             {/* Left: Connection Status (Subtle) */}
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`}></div>
-                    <span className={`text-xs font-medium ${isConnected ? 'text-gray-300' : 'text-red-400'}`}>
+                    <span className={`text-xs font-medium ${isConnected ? 'text-gray-600 dark:text-gray-300' : 'text-red-500 dark:text-red-400'}`}>
                         {isConnected ? 'Connected' : 'Disconnected'}
                     </span>
                 </div>
@@ -28,7 +28,7 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-1.5 text-gray-500">
+                <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-500">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -39,13 +39,13 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
             {/* Right: Language & Branding */}
             <div className="flex items-center gap-3">
                 <span className="text-xs font-mono text-gray-500 uppercase">{language}</span>
-                <span className="text-dark-500">|</span>
-                <span className="text-xs text-gray-600">Built with ❤️ by Ashish Goyal</span>
+                <span className="text-gray-300 dark:text-dark-500">|</span>
+                <span className="text-xs text-gray-500 dark:text-gray-600">Built with ❤️ by Ashish Goyal</span>
                 <a
                     href="https://github.com/ashish-goyal-1"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                     title="GitHub"
                 >
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -56,7 +56,7 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
                     href="https://www.linkedin.com/in/ashish-goyal-66422b257/"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                     title="LinkedIn"
                 >
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">

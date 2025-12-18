@@ -188,6 +188,12 @@ function EditorPage() {
         }
     }, [yText, isHost, language]);
 
+    // Keep track of active tab for socket events without triggering re-connects
+    const activeSidebarTabRef = useRef(activeSidebarTab);
+    useEffect(() => {
+        activeSidebarTabRef.current = activeSidebarTab;
+    }, [activeSidebarTab]);
+
     // Socket connection and event handlers
     useEffect(() => {
         if (!username) return;
@@ -284,8 +290,8 @@ function EditorPage() {
                 isLocal: senderName === username
             }]);
 
-            // Show notification if on users tab
-            if (activeSidebarTab !== 'chat') {
+            // Show notification if on users tab (check ref to avoid effect dependency)
+            if (activeSidebarTabRef.current !== 'chat') {
                 setHasUnreadMessages(true);
             }
         };
@@ -320,7 +326,7 @@ function EditorPage() {
             socket.off('receive_message', handleReceiveMessage);
             socket.disconnect();
         };
-    }, [roomId, username, activeSidebarTab]);
+    }, [roomId, username]);
 
     // Resizable panels drag handler
     useEffect(() => {
@@ -706,7 +712,7 @@ function EditorPage() {
 
                     {/* Terminal resize handle */}
                     <div
-                        className="h-1 bg-dark-600 hover:bg-accent-blue cursor-row-resize transition-colors"
+                        className="h-1 bg-gray-200 dark:bg-dark-600 hover:bg-accent-blue cursor-row-resize transition-colors"
                         onMouseDown={() => setIsDraggingTerminal(true)}
                     />
 
@@ -726,20 +732,20 @@ function EditorPage() {
 
                 {/* Sidebar resize handle */}
                 <div
-                    className="w-1 bg-dark-600 hover:bg-accent-blue cursor-col-resize transition-colors"
+                    className="w-1 bg-gray-200 dark:bg-dark-600 hover:bg-accent-blue cursor-col-resize transition-colors"
                     onMouseDown={() => setIsDraggingSidebar(true)}
                 />
 
                 {/* Sidebar - Tabbed: Users + Chat */}
-                <div style={{ width: sidebarWidth }} className="bg-dark-800 border-l border-dark-600 flex flex-col min-w-[200px]">
+                <div style={{ width: sidebarWidth }} className="bg-gray-50 dark:bg-dark-800 border-l border-gray-200 dark:border-dark-600 flex flex-col min-w-[200px] transition-colors duration-200">
                     {/* Sidebar Tabs - Segmented Pill Style */}
                     <div className="p-2">
-                        <div className="flex bg-dark-900 rounded-lg p-1">
+                        <div className="flex bg-gray-200 dark:bg-dark-900 rounded-lg p-1 transition-colors duration-200">
                             <button
                                 onClick={() => setActiveSidebarTab('users')}
                                 className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all ${activeSidebarTab === 'users'
-                                    ? 'bg-dark-700 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-300'
+                                    ? 'bg-white dark:bg-dark-700 text-gray-900 dark:text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300'
                                     }`}
                             >
                                 Users ({clients.length})
@@ -747,8 +753,8 @@ function EditorPage() {
                             <button
                                 onClick={() => { setActiveSidebarTab('chat'); setHasUnreadMessages(false); }}
                                 className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all relative ${activeSidebarTab === 'chat'
-                                    ? 'bg-dark-700 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-300'
+                                    ? 'bg-white dark:bg-dark-700 text-gray-900 dark:text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300'
                                     }`}
                             >
                                 Chat

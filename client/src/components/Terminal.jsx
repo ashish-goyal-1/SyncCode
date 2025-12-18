@@ -8,9 +8,9 @@ function Terminal({ output, stdin, setStdin, isLoading, isError, onClear, execut
     const [activeTab, setActiveTab] = useState('output');
 
     return (
-        <div className="h-full flex flex-col bg-dark-900 rounded-lg overflow-hidden border border-dark-600">
+        <div className="h-full flex flex-col bg-dark-900 border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden transition-colors duration-200">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-0 bg-dark-800 border-b border-dark-600 min-h-[40px]">
+            <div className="flex items-center justify-between px-4 py-0 bg-gray-100 dark:bg-dark-800 border-b border-gray-200 dark:border-dark-600 min-h-[40px] transition-colors duration-200">
                 <div className="flex items-center gap-4 h-full">
                     {/* Traffic lights */}
                     <div className="flex gap-1.5">
@@ -24,8 +24,8 @@ function Terminal({ output, stdin, setStdin, isLoading, isError, onClear, execut
                         <button
                             onClick={() => setActiveTab('output')}
                             className={`px-4 text-sm font-medium h-full border-b-2 transition-colors ${activeTab === 'output'
-                                    ? 'border-accent-blue text-white bg-dark-700/50'
-                                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                                ? 'border-accent-blue text-gray-900 dark:text-white bg-white dark:bg-dark-700/50'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                                 }`}
                         >
                             Output
@@ -33,8 +33,8 @@ function Terminal({ output, stdin, setStdin, isLoading, isError, onClear, execut
                         <button
                             onClick={() => setActiveTab('input')}
                             className={`px-4 text-sm font-medium h-full border-b-2 transition-colors ${activeTab === 'input'
-                                    ? 'border-accent-blue text-white bg-dark-700/50'
-                                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                                ? 'border-accent-blue text-gray-900 dark:text-white bg-white dark:bg-dark-700/50'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                                 }`}
                         >
                             Input (stdin)
@@ -74,13 +74,13 @@ function Terminal({ output, stdin, setStdin, isLoading, isError, onClear, execut
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-4 overflow-auto terminal font-mono text-sm">
+            <div className="flex-1 p-4 overflow-auto terminal font-mono text-sm bg-dark-900">
                 {activeTab === 'output' ? (
                     <div className="h-full">
                         {isLoading ? (
                             <div className="text-gray-400 animate-pulse">Running code...</div>
                         ) : output ? (
-                            <pre className={`whitespace-pre-wrap ${isError ? 'text-red-400' : 'text-green-400'}`}>
+                            <pre className={`whitespace-pre-wrap pl-4 ${isError ? 'text-red-400' : 'text-gray-300'}`}>
                                 {output}
                             </pre>
                         ) : (

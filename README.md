@@ -193,18 +193,7 @@ SyncCode uses a **Dual-Channel Architecture** to optimize performance:
 | `ping` | Client → Server | Latency measurement |
 | `chat_message` | Bidirectional | Room chat messages |
 
-## 🎯 Use Cases
 
-SyncCode is optimized for **single-file collaboration** scenarios:
-
-| Use Case | How It Helps |
-|----------|-------------|
-| **Coding Interviews** | Host locks room, candidate codes, no data loss if both type |
-| **Algorithm Practice** | LeetCode-style problems with a partner |
-| **Teaching** | Instructor controls, students observe in real-time |
-| **Code Reviews** | Walk through a function together |
-
-> 💡 **Focused on:** Single-file collaboration — perfect for interviews and learning.
 
 ## 🗺️ Roadmap
 
