@@ -94,34 +94,38 @@ wss.on('connection', (ws, request) => {
 
   // === DOCUMENT SYNC ===
 
-  // Listen for updates to doc and broadcast to all clients
+  // Listen for updates to doc and broadcast to all OTHER clients
   const updateHandler = (update, origin) => {
-    if (origin !== ws) {
-      const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, messageSync);
-      syncProtocol.writeUpdate(encoder, update);
-      const message = encoding.toUint8Array(encoder);
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, messageSync);
+    syncProtocol.writeUpdate(encoder, update);
+    const message = encoding.toUint8Array(encoder);
 
-      conns.forEach((_, conn) => {
+    // Broadcast to all clients EXCEPT the one who sent the update
+    conns.forEach((_, conn) => {
+      if (conn !== origin) {
         send(conn, message);
-      });
-    }
+      }
+    });
   };
   doc.on('update', updateHandler);
 
   // === AWARENESS ===
 
-  // Listen for awareness changes and broadcast
+  // Listen for awareness changes and broadcast to all OTHER clients
   const awarenessChangeHandler = ({ added, updated, removed }, origin) => {
     const changedClients = added.concat(updated, removed);
-    if (origin !== ws && changedClients.length > 0) {
+    if (changedClients.length > 0) {
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, messageAwareness);
       encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients));
       const message = encoding.toUint8Array(encoder);
 
+      // Broadcast to all clients EXCEPT the one who triggered the change
       conns.forEach((_, conn) => {
-        send(conn, message);
+        if (conn !== origin) {
+          send(conn, message);
+        }
       });
     }
   };
