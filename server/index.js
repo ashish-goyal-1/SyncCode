@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const WebSocket = require('ws');
-const { setupWSConnection } = require('@y/websocket-server');
+const { setupWSConnection } = require('@y/websocket-server/utils');
 require('dotenv').config();
 
 const app = express();

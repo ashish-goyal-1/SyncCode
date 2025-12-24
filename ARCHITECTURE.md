@@ -120,9 +120,8 @@ SyncCode is a browser-based collaborative code editor that enables multiple user
 | **Express** | HTTP server framework |
 | **Socket.io** | WebSocket library for presence/chat |
 | **ws** | Raw WebSocket server for Yjs |
+| **@y/websocket-server** | Official Yjs server-side sync handling |
 | **Yjs** | Server-side document management |
-| **y-protocols** | Sync and awareness protocols |
-| **lib0** | Binary encoding/decoding utilities |
 
 ### External Services
 
