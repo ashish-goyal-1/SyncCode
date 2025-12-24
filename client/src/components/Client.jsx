@@ -13,7 +13,7 @@ function Client({ username, color, isHost = false }) {
     };
 
     return (
-        <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-dark-700 transition-colors">
+        <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
             {/* Avatar */}
             <div className="relative">
                 <div
@@ -32,11 +32,11 @@ function Client({ username, color, isHost = false }) {
 
             {/* Username */}
             <div className="flex flex-col min-w-0">
-                <span className="text-gray-300 text-sm font-medium truncate">
+                <span className="text-gray-800 dark:text-gray-300 text-sm font-medium truncate">
                     {username}
                 </span>
                 {isHost && (
-                    <span className="text-accent-purple text-xs">Host</span>
+                    <span className="text-purple-700 dark:text-accent-purple text-xs">Host</span>
                 )}
             </div>
         </div>

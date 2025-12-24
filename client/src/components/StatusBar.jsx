@@ -3,10 +3,11 @@
  */
 function StatusBar({ language, isConnected, usersCount, latency }) {
     // Color code latency: green < 80ms, yellow < 200ms, red >= 200ms
+    // Using darker colors in light mode for better visibility
     const getLatencyColor = (ms) => {
-        if (ms < 80) return 'text-green-400';
-        if (ms < 200) return 'text-yellow-400';
-        return 'text-red-400';
+        if (ms < 80) return 'text-green-600 dark:text-green-400';
+        if (ms < 200) return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-red-600 dark:text-red-400';
     };
 
     return (
@@ -28,7 +29,7 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-500">
+                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-500">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -38,14 +39,14 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
 
             {/* Right: Language & Branding */}
             <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-gray-500 uppercase">{language}</span>
-                <span className="text-gray-300 dark:text-dark-500">|</span>
-                <span className="text-xs text-gray-500 dark:text-gray-600">Built with ❤️ by Ashish Goyal</span>
+                <span className="text-xs font-mono text-gray-600 dark:text-gray-500 uppercase">{language}</span>
+                <span className="text-gray-400 dark:text-dark-500">|</span>
+                <span className="text-xs text-gray-600 dark:text-gray-500">Built with ❤️ by Ashish Goyal</span>
                 <a
                     href="https://github.com/ashish-goyal-1"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                     title="GitHub"
                 >
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -56,7 +57,7 @@ function StatusBar({ language, isConnected, usersCount, latency }) {
                     href="https://www.linkedin.com/in/ashish-goyal-66422b257/"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                     title="LinkedIn"
                 >
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">

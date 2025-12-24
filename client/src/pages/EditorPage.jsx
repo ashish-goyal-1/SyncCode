@@ -560,14 +560,14 @@ function EditorPage() {
                     <span className="text-xl font-bold gradient-text">SyncCode</span>
 
                     {/* Yjs Connection Status */}
-                    <span className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full ${yjsConnected ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                        <span className={`w-2 h-2 rounded-full ${yjsConnected ? 'bg-green-400' : 'bg-yellow-400 animate-pulse'}`}></span>
+                    <span className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full ${yjsConnected ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'}`}>
+                        <span className={`w-2 h-2 rounded-full ${yjsConnected ? 'bg-green-500 dark:bg-green-400' : 'bg-yellow-500 dark:bg-yellow-400 animate-pulse'}`}></span>
                         {yjsConnected ? 'Synced' : 'Connecting...'}
                     </span>
 
                     {/* Lock Status Badge */}
                     {isLocked && (
-                        <span className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
+                        <span className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-xs rounded-full">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
@@ -577,7 +577,7 @@ function EditorPage() {
 
                     {/* Host Badge */}
                     {isHost && (
-                        <span className="flex items-center gap-1 px-2 py-1 bg-accent-purple/20 text-accent-purple text-xs rounded-full">
+                        <span className="flex items-center gap-1 px-2 py-1 bg-accent-purple/20 text-purple-700 dark:text-accent-purple text-xs rounded-full">
                             👑 Host
                         </span>
                     )}
