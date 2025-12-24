@@ -1,12 +1,21 @@
 # SyncCode
 
+<div align="center">
+
+![SyncCode Logo](https://img.shields.io/badge/SyncCode-Real--Time%20Collaboration-blue?style=for-the-badge&logo=visual-studio-code)
+
 A real-time collaborative code editor for **coding interviews**, **pair programming**, and **teaching**. Built with React, Yjs CRDT, and Monaco Editor.
 
-🚀 **[Live Demo](https://synccode-five.vercel.app)** | 📦 **[Backend API](https://synccode-server-3xzv.onrender.com)**
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-synccode--five.vercel.app-00C853?style=for-the-badge)](https://synccode-five.vercel.app)
+[![Backend Status](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://synccode-server-3xzv.onrender.com)
 
-> ⚠️ **Note:** The server is hosted on Render's free tier. Please allow **50-60 seconds** for the initial connection to wake up.
+</div>
 
-> 💡 **Focus:** Single-file collaboration optimized for algorithm problems and code snippets — not a full IDE.
+> ⚠️ **Note:** Server is on Render's free tier. Please allow **50-60 seconds** for initial connection.
+
+> 💡 **Focus:** Single-file collaboration optimized for algorithm problems — not a full IDE.
+
+---
 
 ## 📑 Table of Contents
 
@@ -16,13 +25,17 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 - [Quick Start](#-quick-start)
 - [Project Structure](#-project-structure)
 - [Architecture](#-architecture)
-- [Use Cases](#-use-cases)
+- [Known Limitations](#️-known-limitations)
 - [Roadmap](#️-roadmap)
 - [Author](#-author)
 - [License](#-license)
-- [Acknowledgments](#-acknowledgments)
+
+---
 
 ## 📸 Screenshots
+
+<details>
+<summary>Click to expand</summary>
 
 ### Home Page
 ![Home Page](./screenshots/home.png)
@@ -33,47 +46,62 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 ### Multi-User Collaboration
 ![Multi-User Collaboration](./screenshots/multi-user-editor.png)
 
+</details>
+
+---
+
 ## ✨ Features
 
-### Real-Time Collaboration (CRDT-Powered)
-- **Conflict-Free Sync** — No data loss when multiple users type simultaneously (Yjs CRDT)
-- **Live Code Sync** — See changes instantly as others type
-- **Cursor Presence** — View other users' cursors with name labels
-- **User Avatars** — Colored initials for each participant
+### 🔄 Real-Time Collaboration (CRDT-Powered)
+| Feature | Description |
+|---------|-------------|
+| **Conflict-Free Sync** | No data loss when multiple users type simultaneously (Yjs CRDT) |
+| **Live Code Sync** | See changes instantly as others type |
+| **Cursor Presence** | View other users' cursors with name labels |
+| **User Avatars** | Colored initials for each participant |
 
-### Code Execution
-- **Run Code** — Execute code directly in the browser via Piston API
-- **8 Languages** — JavaScript, Python, C++, Java, C, TypeScript, Go, Rust
-- **stdin Support** — Input handling for interactive programs
+### ⚡ Code Execution
+| Feature | Description |
+|---------|-------------|
+| **Run Code** | Execute code directly via Piston API |
+| **8 Languages** | JavaScript, Python, C++, Java, C, TypeScript, Go, Rust |
+| **stdin Support** | Input handling for interactive programs |
+| **Execution Time** | Shows how long your code took to run |
 
-### Interview Mode
-- **Host Controls** — First user becomes room host
-- **Read-Only Mode** — Lock room so others can only view
-- **Host Transfer** — Automatic transfer when host leaves
+### 🎯 Interview Mode
+| Feature | Description |
+|---------|-------------|
+| **Host Controls** | First user becomes room host |
+| **Read-Only Lock** | Lock room so others can only view |
+| **Host Transfer** | Automatic transfer when host leaves |
 
-### User Experience
-- **Dark/Light Theme** — Toggle with persistence
-- **Download Code** — Export with correct file extension
-- **Keyboard Shortcuts** — `Ctrl+Enter` to run code
-- **Language Templates** — Valid boilerplate when switching languages
-- **Smart Invite Links** — Share room URL, auto-fills Room ID for invitees
-- **Latency Indicator** — Real-time ping display (⚡ 0ms) with color coding
-- **Dynamic Page Title** — Browser tab shows room context
-- **Desktop Warning** — Recommends larger screen on mobile devices
-- **Room Chat** — Built-in messaging with history
+### 🎨 User Experience
+| Feature | Description |
+|---------|-------------|
+| **Dark/Light Theme** | Toggle with persistence |
+| **Download Code** | Export with correct file extension |
+| **Keyboard Shortcuts** | `Ctrl+Enter` to run code |
+| **Language Templates** | Valid boilerplate when switching languages |
+| **Smart Invite Links** | Share URL, auto-fills Room ID |
+| **Latency Indicator** | Real-time ping display with color coding |
+| **Room Chat** | Built-in messaging with history |
+
+---
 
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 18, Vite, Tailwind CSS |
-| Editor | Monaco Editor (VS Code engine) |
-| Real-Time Sync | **Yjs CRDT** + y-monaco binding |
-| Presence & Control | Socket.io |
-| Backend | Node.js, Express, y-websocket |
-| Execution | Piston API |
+| **Frontend** | React 18, Vite, Tailwind CSS |
+| **Editor** | Monaco Editor (VS Code engine) |
+| **Real-Time Sync** | Yjs CRDT + y-monaco binding |
+| **Presence & Chat** | Socket.io |
+| **Backend** | Node.js, Express, @y/websocket-server |
+| **Code Execution** | Piston API (sandboxed) |
 
-> 🔬 **Why Yjs?** Same CRDT technology used by Figma, VS Code Live Share, and CodeSandbox for conflict-free collaboration.
+> 🔬 **Why Yjs?** Same CRDT technology used by Figma, VS Code Live Share, and CodeSandbox.
+
+---
 
 ## 🚀 Quick Start
 
@@ -89,12 +117,10 @@ git clone https://github.com/ashish-goyal-1/synccode.git
 cd synccode
 
 # Install server dependencies
-cd server
-npm install
+cd server && npm install
 
 # Install client dependencies
-cd ../client
-npm install
+cd ../client && npm install
 ```
 
 ### Running Locally
@@ -103,108 +129,113 @@ npm install
 # Terminal 1 - Start server
 cd server
 npm start
-# Server runs on http://localhost:5000
+# Runs on http://localhost:5000
 
 # Terminal 2 - Start client
 cd client
 npm run dev
-# Client runs on http://localhost:5173
+# Runs on http://localhost:5173
 ```
 
 ### Environment Variables
-
-Copy `.env.example` to `.env` in both folders:
-
-```bash
-# Server
-cp server/.env.example server/.env
-
-# Client (optional - uses defaults)
-cp client/.env.example client/.env
-```
 
 | Variable | Location | Default | Description |
 |----------|----------|---------|-------------|
 | `PORT` | server | 5000 | Server port |
 | `CLIENT_URL` | server | http://localhost:5173 | CORS origin |
-| `VITE_SERVER_URL` | client | http://localhost:5000 | Socket server |
+| `VITE_SERVER_URL` | client | http://localhost:5000 | Backend URL |
 
 ### Deployment
 
-**Backend (Render/Railway):**
-1. Deploy `server/` folder
-2. Set `CLIENT_URL` to your frontend URL
+| Platform | Folder | Key Setting |
+|----------|--------|-------------|
+| **Render/Railway** | `server/` | Set `CLIENT_URL` |
+| **Vercel/Netlify** | `client/` | Set `VITE_SERVER_URL` |
 
-**Frontend (Vercel/Netlify):**
-1. Deploy `client/` folder
-2. Set `VITE_SERVER_URL` to your backend URL
-
-### Usage
-
-1. Open http://localhost:5173
-2. Click **"New"** to generate a room ID
-3. Enter your username and click **"Join Room"**
-4. Share the Room ID with others to collaborate!
+---
 
 ## 📁 Project Structure
 
 ```
 synccode/
-├── client/                 # React frontend
+├── client/                     # React frontend
 │   ├── src/
-│   │   ├── components/     # Reusable components
+│   │   ├── components/         # Reusable UI components
 │   │   │   ├── Editor.jsx      # Monaco + Yjs binding
 │   │   │   ├── Client.jsx      # User avatar
-│   │   │   ├── Terminal.jsx    # Output panel
-│   │   │   └── ThemeToggle.jsx # Dark/light switch
+│   │   │   ├── Terminal.jsx    # Code output panel
+│   │   │   └── Chat.jsx        # Room messaging
 │   │   ├── hooks/
 │   │   │   └── useYjs.js       # Yjs CRDT hook
 │   │   ├── pages/
-│   │   │   ├── Home.jsx        # Join room form
+│   │   │   ├── Home.jsx        # Room join/create
 │   │   │   └── EditorPage.jsx  # Main editor view
-│   │   └── socket.js       # Socket.io singleton
+│   │   └── socket.js           # Socket.io config
 │   └── package.json
 │
-└── server/                 # Node.js backend
-    ├── index.js            # Socket.io + Yjs WebSocket server
-    └── package.json
+├── server/                     # Node.js backend
+│   ├── index.js                # Express + Socket.io + Yjs
+│   └── package.json
+│
+├── ARCHITECTURE.md             # Detailed technical docs
+└── README.md                   # This file
 ```
+
+---
 
 ## 🔌 Architecture
 
-SyncCode uses a **Dual-Channel Architecture** to optimize performance:
+SyncCode uses a **Dual-Channel Architecture** for optimal performance:
 
-| Channel | Purpose |
-|---------|--------|
-| **Socket.io** | Lightweight events (chat, cursors, room state) |
-| **y-websocket** | Heavy CRDT document syncing |
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         CLIENT                              │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐      ┌─────────────────────────┐   │
+│  │   Yjs WebSocket     │      │      Socket.io          │   │
+│  │   (Document Sync)   │      │   (Presence & Chat)     │   │
+│  └──────────┬──────────┘      └───────────┬─────────────┘   │
+└─────────────┼─────────────────────────────┼─────────────────┘
+              │                             │
+              ▼                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        SERVER                               │
+│  ┌─────────────────────┐      ┌─────────────────────────┐   │
+│  │  @y/websocket-server│      │     Socket.io Server    │   │
+│  │  (CRDT Protocol)    │      │   (Events & Rooms)      │   │
+│  └─────────────────────┘      └─────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
 
-> 🔧 This separation ensures that chat messages or cursor movements never block the code synchronization thread.
+| Channel | Purpose | Protocol |
+|---------|---------|----------|
+| **Yjs WebSocket** | Code synchronization | Binary (efficient) |
+| **Socket.io** | Chat, cursors, room state | JSON (flexible) |
 
-### Socket.io Events
+> � See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation.
 
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `join` | Client → Server | Join a room |
-| `joined` | Server → All | User list update |
-| `language_change` | Bidirectional | Language switch |
-| `toggle_lock` | Client → Server | Lock/unlock room |
-| `lock_changed` | Server → All | Lock state update |
-| `ping` | Client → Server | Latency measurement |
-| `chat_message` | Bidirectional | Room chat messages |
+---
 
+## ⚠️ Known Limitations
 
+| Limitation | Details |
+|------------|---------|
+| **y-monaco edge case** | Position translation can occasionally drift at specific character boundaries. This is a [documented y-monaco limitation](https://github.com/yjs/y-monaco/issues), not in SyncCode's implementation. |
+| **Render cold start** | Free tier server takes 50-60 seconds to wake after inactivity. |
+| **Single file only** | Designed for algorithm problems, not multi-file projects. |
+
+---
 
 ## 🗺️ Roadmap
 
-Planned for future versions:
-
-- [ ] Persistent storage (MongoDB/Redis)
+- [ ] Persistent room storage (MongoDB/Redis)
 - [ ] User authentication & session history
-- [ ] Video/voice chat integration (WebRTC)
+- [ ] Video/voice chat (WebRTC)
 - [ ] Multiple files/tabs support
 - [ ] Export to GitHub Gist
-- [ ] Interview timer with sync
+- [ ] Synced interview timer
+
+---
 
 ## 👤 Author
 
@@ -213,13 +244,17 @@ Planned for future versions:
 [![GitHub](https://img.shields.io/badge/GitHub-ashish--goyal--1-181717?style=flat&logo=github)](https://github.com/ashish-goyal-1)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ashish%20Goyal-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/ashish-goyal-66422b257/)
 
+---
+
 ## 📝 License
 
 MIT License - feel free to use for your own projects!
 
+---
+
 ## 🙏 Acknowledgments
 
-- [Yjs](https://github.com/yjs/yjs) — CRDT framework for conflict-free collaboration
+- [Yjs](https://github.com/yjs/yjs) — CRDT framework
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/) — VS Code's editor
-- [Piston API](https://github.com/engineer-man/piston) — Code execution engine
+- [Piston API](https://github.com/engineer-man/piston) — Code execution
 - [Socket.io](https://socket.io/) — Real-time communication

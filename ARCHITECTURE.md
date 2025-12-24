@@ -505,6 +505,17 @@ CLIENT_URL=https://synccode-five.vercel.app
 
 ---
 
+## Known Limitations
+
+| Limitation | Details |
+|------------|---------|
+| **y-monaco position edge case** | The y-monaco binding library has a known issue where position translation can occasionally drift at specific character boundaries. This is a [documented limitation](https://github.com/yjs/y-monaco/issues) in the library, not in SyncCode's implementation. |
+| **Render cold start** | Free tier server takes 50-60 seconds to wake up after inactivity. |
+| **Single file only** | Designed for algorithm problems and code snippets, not multi-file projects. |
+| **In-memory storage** | Room data is lost on server restart. No persistence. |
+
+---
+
 ## Future Enhancements (Roadmap)
 
 | Feature | Complexity | Description |
