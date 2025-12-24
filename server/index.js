@@ -3,7 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const WebSocket = require('ws');
-const Y = require('yjs');
+// Use the y-websocket utils for proper protocol handling
+const { setupWSConnection } = require('y-websocket/bin/utils');
 require('dotenv').config();
 
 const app = express();
@@ -44,17 +45,6 @@ const io = new Server(server, {
 // This handles real-time code collaboration with automatic conflict resolution
 const wss = new WebSocket.Server({ noServer: true });
 
-// Store Yjs documents per room
-const yjsDocs = new Map();
-
-const getYDoc = (docName) => {
-  if (!yjsDocs.has(docName)) {
-    const doc = new Y.Doc();
-    yjsDocs.set(docName, { doc, clients: new Set() });
-  }
-  return yjsDocs.get(docName);
-};
-
 // Handle WebSocket upgrade requests
 server.on('upgrade', (request, socket, head) => {
   // Route /yjs/* connections to Yjs WebSocket server
@@ -66,66 +56,19 @@ server.on('upgrade', (request, socket, head) => {
   // Socket.io handles its own upgrade internally
 });
 
-// Set up Yjs WebSocket connections
+// Set up Yjs WebSocket connections using y-websocket's setupWSConnection
+// This properly handles sync protocol, awareness, and document updates
 wss.on('connection', (ws, request) => {
   // Extract room name from URL path: /yjs/room-id -> room-id
   const docName = request.url?.replace('/yjs/', '') || 'default';
   console.log(`Yjs client connected to room: ${docName}`);
 
-  const { doc, clients } = getYDoc(docName);
-  clients.add(ws);
+  // Use y-websocket's setupWSConnection for proper protocol handling
+  // This handles sync1, sync2, awareness updates, and document updates correctly
+  setupWSConnection(ws, request, { docName });
 
-  // Send current document state to new client
-  const state = Y.encodeStateAsUpdate(doc);
-  ws.send(state);
-
-  // Handle incoming updates from client
-  ws.on('message', (message) => {
-    try {
-      const update = new Uint8Array(message);
-      Y.applyUpdate(doc, update);
-
-      // Broadcast to other clients in same room
-      clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
-    } catch (err) {
-      console.error('Error applying Yjs update:', err.message);
-
-      // If document is corrupted, reset it for this room
-      if (err.message.includes('contentRefs') || err.message.includes('is not a function')) {
-        console.log(`Resetting corrupted Yjs document for room: ${docName}`);
-        const newDoc = new Y.Doc();
-        yjsDocs.set(docName, { doc: newDoc, clients });
-
-        // Send fresh state to all clients
-        const freshState = Y.encodeStateAsUpdate(newDoc);
-        clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(freshState);
-          }
-        });
-      }
-    }
-  });
-
-  // Cleanup on disconnect
   ws.on('close', () => {
-    clients.delete(ws);
     console.log(`Yjs client disconnected from room: ${docName}`);
-
-    // Clean up empty rooms after 5 minutes
-    if (clients.size === 0) {
-      setTimeout(() => {
-        const room = yjsDocs.get(docName);
-        if (room && room.clients.size === 0) {
-          yjsDocs.delete(docName);
-          console.log(`Yjs room ${docName} cleaned up`);
-        }
-      }, 5 * 60 * 1000);
-    }
   });
 });
 
