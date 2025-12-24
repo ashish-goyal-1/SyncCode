@@ -92,7 +92,22 @@ wss.on('connection', (ws, request) => {
         }
       });
     } catch (err) {
-      console.error('Error applying Yjs update:', err);
+      console.error('Error applying Yjs update:', err.message);
+
+      // If document is corrupted, reset it for this room
+      if (err.message.includes('contentRefs') || err.message.includes('is not a function')) {
+        console.log(`Resetting corrupted Yjs document for room: ${docName}`);
+        const newDoc = new Y.Doc();
+        yjsDocs.set(docName, { doc: newDoc, clients });
+
+        // Send fresh state to all clients
+        const freshState = Y.encodeStateAsUpdate(newDoc);
+        clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(freshState);
+          }
+        });
+      }
     }
   });
 
