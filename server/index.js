@@ -3,8 +3,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const WebSocket = require('ws');
-// Use the y-websocket utils for proper protocol handling
-const { setupWSConnection } = require('y-websocket/bin/utils');
+const Y = require('yjs');
+const syncProtocol = require('y-protocols/sync');
+const awarenessProtocol = require('y-protocols/awareness');
+const encoding = require('lib0/encoding');
+const decoding = require('lib0/decoding');
 require('dotenv').config();
 
 const app = express();
@@ -42,33 +45,114 @@ const io = new Server(server, {
 });
 
 // WebSocket server for Yjs CRDT sync
-// This handles real-time code collaboration with automatic conflict resolution
 const wss = new WebSocket.Server({ noServer: true });
+
+// Store Yjs documents and awareness per room
+const docs = new Map();
+
+const getYDoc = (docName) => {
+  if (!docs.has(docName)) {
+    const doc = new Y.Doc();
+    const awareness = new awarenessProtocol.Awareness(doc);
+    docs.set(docName, { doc, awareness, clients: new Set() });
+  }
+  return docs.get(docName);
+};
+
+// Message types from y-websocket protocol
+const messageSync = 0;
+const messageAwareness = 1;
 
 // Handle WebSocket upgrade requests
 server.on('upgrade', (request, socket, head) => {
-  // Route /yjs/* connections to Yjs WebSocket server
   if (request.url && request.url.startsWith('/yjs')) {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
     });
   }
-  // Socket.io handles its own upgrade internally
 });
 
-// Set up Yjs WebSocket connections using y-websocket's setupWSConnection
-// This properly handles sync protocol, awareness, and document updates
+// Set up Yjs WebSocket connections with proper protocol handling
 wss.on('connection', (ws, request) => {
-  // Extract room name from URL path: /yjs/room-id -> room-id
   const docName = request.url?.replace('/yjs/', '') || 'default';
   console.log(`Yjs client connected to room: ${docName}`);
 
-  // Use y-websocket's setupWSConnection for proper protocol handling
-  // This handles sync1, sync2, awareness updates, and document updates correctly
-  setupWSConnection(ws, request, { docName });
+  const { doc, awareness, clients } = getYDoc(docName);
+  clients.add(ws);
 
+  // Send initial sync step 1
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, messageSync);
+  syncProtocol.writeSyncStep1(encoder, doc);
+  ws.send(encoding.toUint8Array(encoder));
+
+  // Send current awareness states
+  const awarenessEncoder = encoding.createEncoder();
+  encoding.writeVarUint(awarenessEncoder, messageAwareness);
+  encoding.writeVarUint8Array(awarenessEncoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awareness.getStates().keys())));
+  ws.send(encoding.toUint8Array(awarenessEncoder));
+
+  // Handle incoming messages
+  ws.on('message', (message) => {
+    try {
+      const data = new Uint8Array(message);
+      const decoder = decoding.createDecoder(data);
+      const messageType = decoding.readVarUint(decoder);
+
+      if (messageType === messageSync) {
+        // Handle sync message
+        const encoder = encoding.createEncoder();
+        encoding.writeVarUint(encoder, messageSync);
+        const syncMessageType = syncProtocol.readSyncMessage(decoder, encoder, doc, null);
+
+        if (encoding.length(encoder) > 1) {
+          // Send response back to this client
+          ws.send(encoding.toUint8Array(encoder));
+        }
+
+        // Broadcast updates to other clients
+        if (syncMessageType === syncProtocol.messageYjsUpdate || syncMessageType === syncProtocol.messageYjsSyncStep2) {
+          clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(message);
+            }
+          });
+        }
+      } else if (messageType === messageAwareness) {
+        // Handle awareness message
+        const update = decoding.readVarUint8Array(decoder);
+        awarenessProtocol.applyAwarenessUpdate(awareness, update, ws);
+
+        // Broadcast awareness to other clients
+        clients.forEach((client) => {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(message);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error processing message:', err.message);
+    }
+  });
+
+  // Cleanup on disconnect
   ws.on('close', () => {
+    clients.delete(ws);
     console.log(`Yjs client disconnected from room: ${docName}`);
+
+    // Clean up awareness for this client
+    awarenessProtocol.removeAwarenessStates(awareness, [doc.clientID], null);
+
+    // Clean up empty rooms after 5 minutes
+    if (clients.size === 0) {
+      setTimeout(() => {
+        const room = docs.get(docName);
+        if (room && room.clients.size === 0) {
+          docs.delete(docName);
+          console.log(`Yjs room ${docName} cleaned up`);
+        }
+      }, 5 * 60 * 1000);
+    }
   });
 });
 
