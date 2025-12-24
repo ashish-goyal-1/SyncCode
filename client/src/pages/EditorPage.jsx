@@ -430,8 +430,9 @@ function EditorPage() {
         const extension = langConfig?.extension || 'txt';
         const filename = `synccode.${extension}`;
 
-        // Get code from Yjs document
-        const code = yText ? yText.toString() : '';
+        // Get code from Monaco editor model (what user actually sees)
+        // This ensures we run exactly what's displayed, avoiding Yjs sync issues
+        const code = editorRef.current ? editorRef.current.getValue() : '';
 
         const blob = new Blob([code], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
@@ -448,8 +449,9 @@ function EditorPage() {
 
     // Run code using Piston API with execution time tracking
     const runCode = async () => {
-        // Get code from Yjs document
-        const code = yText ? yText.toString() : '';
+        // Get code from Monaco editor model (what user actually sees)
+        // This ensures we run exactly what's displayed, avoiding Yjs sync issues
+        const code = editorRef.current ? editorRef.current.getValue() : '';
 
         if (!code.trim()) {
             toast.error('Please write some code first');
