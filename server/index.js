@@ -54,7 +54,7 @@ const getYDoc = (docName) => {
   if (!docs.has(docName)) {
     const doc = new Y.Doc();
     const awareness = new awarenessProtocol.Awareness(doc);
-    docs.set(docName, { doc, awareness, clients: new Set() });
+    docs.set(docName, { doc, awareness, conns: new Map() });
   }
   return docs.get(docName);
 };
@@ -62,6 +62,15 @@ const getYDoc = (docName) => {
 // Message types from y-websocket protocol
 const messageSync = 0;
 const messageAwareness = 1;
+
+// Send a message to a WebSocket connection
+const send = (ws, message) => {
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(message, (err) => {
+      if (err) console.error('WebSocket send error:', err.message);
+    });
+  }
+};
 
 // Handle WebSocket upgrade requests
 server.on('upgrade', (request, socket, head) => {
@@ -77,22 +86,70 @@ wss.on('connection', (ws, request) => {
   const docName = request.url?.replace('/yjs/', '') || 'default';
   console.log(`Yjs client connected to room: ${docName}`);
 
-  const { doc, awareness, clients } = getYDoc(docName);
-  clients.add(ws);
+  const { doc, awareness, conns } = getYDoc(docName);
 
-  // Send initial sync step 1
-  const encoder = encoding.createEncoder();
-  encoding.writeVarUint(encoder, messageSync);
-  syncProtocol.writeSyncStep1(encoder, doc);
-  ws.send(encoding.toUint8Array(encoder));
+  // Track this connection
+  const controlledIds = new Set();
+  conns.set(ws, controlledIds);
+
+  // === DOCUMENT SYNC ===
+
+  // Listen for updates to doc and broadcast to all clients
+  const updateHandler = (update, origin) => {
+    if (origin !== ws) {
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, messageSync);
+      syncProtocol.writeUpdate(encoder, update);
+      const message = encoding.toUint8Array(encoder);
+
+      conns.forEach((_, conn) => {
+        send(conn, message);
+      });
+    }
+  };
+  doc.on('update', updateHandler);
+
+  // === AWARENESS ===
+
+  // Listen for awareness changes and broadcast
+  const awarenessChangeHandler = ({ added, updated, removed }, origin) => {
+    const changedClients = added.concat(updated, removed);
+    if (origin !== ws && changedClients.length > 0) {
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, messageAwareness);
+      encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients));
+      const message = encoding.toUint8Array(encoder);
+
+      conns.forEach((_, conn) => {
+        send(conn, message);
+      });
+    }
+  };
+  awareness.on('update', awarenessChangeHandler);
+
+  // === INITIAL SYNC ===
+
+  // Send sync step 1 to new client
+  {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, messageSync);
+    syncProtocol.writeSyncStep1(encoder, doc);
+    send(ws, encoding.toUint8Array(encoder));
+  }
 
   // Send current awareness states
-  const awarenessEncoder = encoding.createEncoder();
-  encoding.writeVarUint(awarenessEncoder, messageAwareness);
-  encoding.writeVarUint8Array(awarenessEncoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awareness.getStates().keys())));
-  ws.send(encoding.toUint8Array(awarenessEncoder));
+  {
+    const awarenessStates = awareness.getStates();
+    if (awarenessStates.size > 0) {
+      const encoder = encoding.createEncoder();
+      encoding.writeVarUint(encoder, messageAwareness);
+      encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awarenessStates.keys())));
+      send(ws, encoding.toUint8Array(encoder));
+    }
+  }
 
-  // Handle incoming messages
+  // === MESSAGE HANDLER ===
+
   ws.on('message', (message) => {
     try {
       const data = new Uint8Array(message);
@@ -100,54 +157,41 @@ wss.on('connection', (ws, request) => {
       const messageType = decoding.readVarUint(decoder);
 
       if (messageType === messageSync) {
-        // Handle sync message
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, messageSync);
-        const syncMessageType = syncProtocol.readSyncMessage(decoder, encoder, doc, null);
+        const syncMessageType = syncProtocol.readSyncMessage(decoder, encoder, doc, ws);
 
+        // If there's a response to send back
         if (encoding.length(encoder) > 1) {
-          // Send response back to this client
-          ws.send(encoding.toUint8Array(encoder));
-        }
-
-        // Broadcast updates to other clients
-        if (syncMessageType === syncProtocol.messageYjsUpdate || syncMessageType === syncProtocol.messageYjsSyncStep2) {
-          clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-              client.send(message);
-            }
-          });
+          send(ws, encoding.toUint8Array(encoder));
         }
       } else if (messageType === messageAwareness) {
-        // Handle awareness message
         const update = decoding.readVarUint8Array(decoder);
         awarenessProtocol.applyAwarenessUpdate(awareness, update, ws);
-
-        // Broadcast awareness to other clients
-        clients.forEach((client) => {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(message);
-          }
-        });
       }
     } catch (err) {
-      console.error('Error processing message:', err.message);
+      console.error('Error processing Yjs message:', err.message);
     }
   });
 
-  // Cleanup on disconnect
+  // === CLEANUP ===
+
   ws.on('close', () => {
-    clients.delete(ws);
+    conns.delete(ws);
+    doc.off('update', updateHandler);
+    awareness.off('update', awarenessChangeHandler);
+
+    // Remove awareness states for this client
+    awarenessProtocol.removeAwarenessStates(awareness, Array.from(controlledIds), null);
+
     console.log(`Yjs client disconnected from room: ${docName}`);
 
-    // Clean up awareness for this client
-    awarenessProtocol.removeAwarenessStates(awareness, [doc.clientID], null);
-
     // Clean up empty rooms after 5 minutes
-    if (clients.size === 0) {
+    if (conns.size === 0) {
       setTimeout(() => {
         const room = docs.get(docName);
-        if (room && room.clients.size === 0) {
+        if (room && room.conns.size === 0) {
+          room.doc.destroy();
           docs.delete(docName);
           console.log(`Yjs room ${docName} cleaned up`);
         }
