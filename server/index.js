@@ -4,10 +4,6 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const WebSocket = require('ws');
 const Y = require('yjs');
-const syncProtocol = require('y-protocols/sync');
-const awarenessProtocol = require('y-protocols/awareness');
-const encoding = require('lib0/encoding');
-const decoding = require('lib0/decoding');
 require('dotenv').config();
 
 const app = express();
@@ -47,29 +43,17 @@ const io = new Server(server, {
 // WebSocket server for Yjs CRDT sync
 const wss = new WebSocket.Server({ noServer: true });
 
-// Store Yjs documents and awareness per room
-const docs = new Map();
+// Store connections per room (simple approach - let y-websocket clients handle sync)
+const yjsRooms = new Map();
 
-const getYDoc = (docName) => {
-  if (!docs.has(docName)) {
-    const doc = new Y.Doc();
-    const awareness = new awarenessProtocol.Awareness(doc);
-    docs.set(docName, { doc, awareness, conns: new Map() });
-  }
-  return docs.get(docName);
-};
-
-// Message types from y-websocket protocol
-const messageSync = 0;
-const messageAwareness = 1;
-
-// Send a message to a WebSocket connection
-const send = (ws, message) => {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(message, (err) => {
-      if (err) console.error('WebSocket send error:', err.message);
+const getYjsRoom = (roomId) => {
+  if (!yjsRooms.has(roomId)) {
+    yjsRooms.set(roomId, {
+      doc: new Y.Doc(),
+      conns: new Set(),
     });
   }
+  return yjsRooms.get(roomId);
 };
 
 // Handle WebSocket upgrade requests
@@ -81,131 +65,64 @@ server.on('upgrade', (request, socket, head) => {
   }
 });
 
-// Set up Yjs WebSocket connections with proper protocol handling
+// Set up Yjs WebSocket connections
+// Using simple broadcast approach - let clients handle sync protocol
 wss.on('connection', (ws, request) => {
-  const docName = request.url?.replace('/yjs/', '') || 'default';
-  console.log(`Yjs client connected to room: ${docName}`);
+  const roomId = request.url?.replace('/yjs/', '') || 'default';
+  console.log(`Yjs client connected to room: ${roomId}`);
 
-  const { doc, awareness, conns } = getYDoc(docName);
+  const room = getYjsRoom(roomId);
+  room.conns.add(ws);
 
-  // Track this connection
-  const controlledIds = new Set();
-  conns.set(ws, controlledIds);
-
-  // === DOCUMENT SYNC ===
-
-  // Listen for updates to doc and broadcast to all OTHER clients
-  const updateHandler = (update, origin) => {
-    const encoder = encoding.createEncoder();
-    encoding.writeVarUint(encoder, messageSync);
-    syncProtocol.writeUpdate(encoder, update);
-    const message = encoding.toUint8Array(encoder);
-
-    // Broadcast to all clients EXCEPT the one who sent the update
-    conns.forEach((_, conn) => {
-      if (conn !== origin) {
-        send(conn, message);
-      }
-    });
-  };
-  doc.on('update', updateHandler);
-
-  // === AWARENESS ===
-
-  // Listen for awareness changes and broadcast to all OTHER clients
-  const awarenessChangeHandler = ({ added, updated, removed }, origin) => {
-    const changedClients = added.concat(updated, removed);
-    if (changedClients.length > 0) {
-      const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, messageAwareness);
-      encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients));
-      const message = encoding.toUint8Array(encoder);
-
-      // Broadcast to all clients EXCEPT the one who triggered the change
-      conns.forEach((_, conn) => {
-        if (conn !== origin) {
-          send(conn, message);
-        }
-      });
-    }
-  };
-  awareness.on('update', awarenessChangeHandler);
-
-  // === INITIAL SYNC ===
-
-  // Send sync step 1 to new client
-  {
-    const encoder = encoding.createEncoder();
-    encoding.writeVarUint(encoder, messageSync);
-    syncProtocol.writeSyncStep1(encoder, doc);
-    send(ws, encoding.toUint8Array(encoder));
+  // Send current document state to new client
+  const currentState = Y.encodeStateAsUpdate(room.doc);
+  if (currentState.length > 0) {
+    ws.send(currentState);
   }
 
-  // Send current awareness states
-  {
-    const awarenessStates = awareness.getStates();
-    if (awarenessStates.size > 0) {
-      const encoder = encoding.createEncoder();
-      encoding.writeVarUint(encoder, messageAwareness);
-      encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awarenessStates.keys())));
-      send(ws, encoding.toUint8Array(encoder));
-    }
-  }
-
-  // === MESSAGE HANDLER ===
-
+  // Handle incoming messages - forward to all other clients and apply to doc
   ws.on('message', (message) => {
     try {
-      const data = new Uint8Array(message);
-      const decoder = decoding.createDecoder(data);
-      const messageType = decoding.readVarUint(decoder);
+      const update = new Uint8Array(message);
 
-      if (messageType === messageSync) {
-        const encoder = encoding.createEncoder();
-        encoding.writeVarUint(encoder, messageSync);
-        const syncMessageType = syncProtocol.readSyncMessage(decoder, encoder, doc, ws);
-
-        // If there's a response to send back
-        if (encoding.length(encoder) > 1) {
-          send(ws, encoding.toUint8Array(encoder));
-        }
-      } else if (messageType === messageAwareness) {
-        const update = decoding.readVarUint8Array(decoder);
-        awarenessProtocol.applyAwarenessUpdate(awareness, update, ws);
+      // Try to apply as a Yjs update to server doc
+      try {
+        Y.applyUpdate(room.doc, update, ws);
+      } catch (e) {
+        // If not a valid update, just forward anyway (might be y-websocket protocol message)
       }
+
+      // Forward to all other clients in the room
+      room.conns.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
     } catch (err) {
       console.error('Error processing Yjs message:', err.message);
     }
   });
 
-  // === CLEANUP ===
-
+  // Cleanup on disconnect
   ws.on('close', () => {
-    conns.delete(ws);
-    doc.off('update', updateHandler);
-    awareness.off('update', awarenessChangeHandler);
-
-    // Remove awareness states for this client
-    awarenessProtocol.removeAwarenessStates(awareness, Array.from(controlledIds), null);
-
-    console.log(`Yjs client disconnected from room: ${docName}`);
+    room.conns.delete(ws);
+    console.log(`Yjs client disconnected from room: ${roomId}`);
 
     // Clean up empty rooms after 5 minutes
-    if (conns.size === 0) {
+    if (room.conns.size === 0) {
       setTimeout(() => {
-        const room = docs.get(docName);
-        if (room && room.conns.size === 0) {
-          room.doc.destroy();
-          docs.delete(docName);
-          console.log(`Yjs room ${docName} cleaned up`);
+        const currentRoom = yjsRooms.get(roomId);
+        if (currentRoom && currentRoom.conns.size === 0) {
+          currentRoom.doc.destroy();
+          yjsRooms.delete(roomId);
+          console.log(`Yjs room ${roomId} cleaned up`);
         }
       }, 5 * 60 * 1000);
     }
   });
 });
 
-// In-memory storage for rooms
-// roomId -> { code, language, users, hostId, isLocked }
+// In-memory storage for Socket.io roomsId -> { code, language, users, hostId, isLocked }
 const rooms = new Map();
 
 // Generate distinct, bright colors for user avatars
