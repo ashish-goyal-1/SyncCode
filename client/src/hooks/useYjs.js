@@ -37,13 +37,17 @@ export function useYjs(roomId, username, userColor) {
         const baseUrl = serverUrl.replace(/^https?:/, wsProtocol);
         const wsUrl = `${baseUrl}/yjs`;
 
-        // Create WebSocket provider
+        // Create WebSocket provider with reconnection options
         // The provider connects to wsUrl and uses roomId as the document name
         const provider = new WebsocketProvider(
             wsUrl,
             roomId, // Room/document name
             yDoc,
-            { connect: true }
+            {
+                connect: true,
+                // Reconnection settings for reliability
+                maxBackoffTime: 5000,  // Max 5 seconds between retries
+            }
         );
         providerRef.current = provider;
 

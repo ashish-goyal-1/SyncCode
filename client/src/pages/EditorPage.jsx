@@ -204,6 +204,13 @@ function EditorPage() {
         // Join the room with our generated color for consistent color sync
         socket.emit('join', { roomId, username, color: userColor });
 
+        // Handle reconnection - re-emit join to sync user list
+        const handleConnect = () => {
+            console.log('Socket reconnected, re-joining room');
+            socket.emit('join', { roomId, username, color: userColor });
+        };
+        socket.on('connect', handleConnect);
+
         // Handle successful join
         const handleJoined = ({ clients: roomClients, username: joinedUser, socketId, hostId: roomHostId, isLocked: roomLocked }) => {
             setClients(roomClients);
@@ -315,6 +322,7 @@ function EditorPage() {
 
         // Cleanup on unmount
         return () => {
+            socket.off('connect', handleConnect);
             socket.off('joined', handleJoined);
             socket.off('sync_code', handleSyncCode);
             socket.off('language_change', handleLanguageChange);
