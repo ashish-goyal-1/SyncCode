@@ -42,11 +42,6 @@ function Home() {
         navigate(`/editor/${roomId}`, { state: { username: username.trim() } });
     };
 
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleJoinRoom(e);
-        }
-    };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
@@ -84,7 +79,6 @@ function Home() {
                                     type="text"
                                     value={roomId}
                                     onChange={(e) => setRoomId(e.target.value)}
-                                    onKeyPress={handleKeyPress}
                                     placeholder="Enter room ID or generate new"
                                     className="input-dark flex-1"
                                 />
@@ -108,7 +102,6 @@ function Home() {
                                 ref={usernameInputRef}
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                onKeyPress={handleKeyPress}
                                 placeholder="Enter your name"
                                 className="input-dark w-full"
                                 maxLength={20}

@@ -26,4 +26,5 @@ Thumbs.db
 *.swp
 *.swo
 
-SyncCode_Project_Documentation.md
+# Local documentation (personal/interview prep)
+docs/

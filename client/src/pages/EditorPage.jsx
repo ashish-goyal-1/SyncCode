@@ -164,8 +164,10 @@ function EditorPage() {
     }, []);
 
     // Redirect if no username - Smart redirect passes roomId to Home
+    const hasRedirected = useRef(false);
     useEffect(() => {
-        if (!username) {
+        if (!username && !hasRedirected.current) {
+            hasRedirected.current = true;
             toast.error('Please enter your name to join');
             navigate('/', {
                 state: {

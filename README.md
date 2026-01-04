@@ -25,6 +25,7 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 - [Quick Start](#-quick-start)
 - [Project Structure](#-project-structure)
 - [Architecture](#-architecture)
+- [Performance](#-performance)
 - [Known Limitations](#️-known-limitations)
 - [Roadmap](#️-roadmap)
 - [Author](#-author)
@@ -212,7 +213,35 @@ SyncCode uses a **Dual-Channel Architecture** for optimal performance:
 | **Yjs WebSocket** | Code synchronization | Binary (efficient) |
 | **Socket.io** | Chat, cursors, room state | JSON (flexible) |
 
-> � See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation.
+> 📖 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation.
+
+---
+
+## ⚡ Performance
+
+Load tested using custom Socket.IO stress tool (`load-test.js`):
+
+| Metric | Local (50 users) | Render (20 users) |
+|--------|------------------|-------------------|
+| **Success Rate** | 100% | 100% |
+| **Avg Latency** | 22.46ms | 257.90ms |
+| **Min Latency** | 13ms | 217ms |
+| **Max Latency** | 65ms | 349ms |
+| **Messages Sent** | 91 | 33 |
+
+> **Note on Latency:** The difference between Local (~22ms) and Render (~258ms) is due to **Free Tier infrastructure overhead** (shared CPU/SSL processing) and public internet routing (Client in India ↔ Server in Singapore). Upgrading to a paid instance would significantly reduce this processing overhead.
+
+> 🧪 **Run tests yourself:**
+> ```bash
+> # Install test dependencies (one-time)
+> npm install socket.io-client
+> 
+> # Run local test (start server first)
+> node load-test.js local 50
+> 
+> # Run production test
+> node load-test.js render 20
+> ```
 
 ---
 

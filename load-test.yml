@@ -1,0 +1,55 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 30
+      arrivalRate: 2
+      name: "Warm up - 2 users/sec"
+    - duration: 60
+      arrivalRate: 5
+      name: "Ramp up - 5 users/sec"  
+    - duration: 30
+      arrivalRate: 2
+      name: "Cool down"
+  engines:
+    socketio-v3:
+      transports: ["websocket"]
+
+scenarios:
+  - name: "SyncCode User Session"
+    engine: socketio-v3
+    flow:
+      # Join a room
+      - emit:
+          channel: "join"
+          data:
+            roomId: "load-test-room"
+            username: "LoadTestUser_{{ $uuid }}"
+            color: "#FF5733"
+      
+      # Wait for join confirmation
+      - think: 2
+      
+      # Send a chat message
+      - emit:
+          channel: "send_message"
+          data:
+            roomId: "load-test-room"
+            message: "Hello from load test!"
+            username: "LoadTestUser"
+            timestamp: "{{ $timestamp }}"
+      
+      # Simulate cursor movement (5 times)
+      - loop:
+          - emit:
+              channel: "cursor_change"
+              data:
+                roomId: "load-test-room"
+                username: "LoadTestUser"
+                color: "#FF5733"
+                lineNumber: "{{ $randomNumber(1, 20) }}"
+                column: "{{ $randomNumber(1, 50) }}"
+          - think: 1
+        count: 5
+      
+      # Stay connected for a while
+      - think: 10
