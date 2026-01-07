@@ -41,11 +41,17 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 ### Home Page
 ![Home Page](./screenshots/home.png)
 
-### Editor with Code Execution
-![Editor](./screenshots/editor.png)
-
 ### Multi-User Collaboration
 ![Multi-User Collaboration](./screenshots/multi-user-editor.png)
+
+### Room Chat
+![Room Chat](./screenshots/chat.png)
+
+### Light Mode
+![Light Mode](./screenshots/light-mode.png)
+
+### Interview Mode (Room Lock)
+![Locked Room](./screenshots/locked-room.png)
 
 </details>
 
