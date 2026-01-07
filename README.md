@@ -7,7 +7,7 @@
 A real-time collaborative code editor for **coding interviews**, **pair programming**, and **teaching**. Built with React, Yjs CRDT, and Monaco Editor.
 
 [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-synccode--five.vercel.app-00C853?style=for-the-badge)](https://synccode-five.vercel.app)
-[![Backend Status](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://synccode-server-3xzv.onrender.com)
+[![Backend Status](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://synccode-server-zx0j.onrender.com)
 
 </div>
 
