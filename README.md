@@ -258,6 +258,7 @@ Load tested using custom Socket.IO stress tool (`load-test.js`):
 | **y-monaco edge case** | Position translation can occasionally drift at specific character boundaries. This is a [documented y-monaco limitation](https://github.com/yjs/y-monaco/issues), not in SyncCode's implementation. |
 | **Render cold start** | Free tier server takes 50-60 seconds to wake after inactivity. |
 | **Single file only** | Designed for algorithm problems, not multi-file projects. |
+| **Session-based storage** | Edits persist in memory during active sessions. Page refresh resets state (designed for ephemeral collaboration, not long-term storage). |
 
 ---
 
