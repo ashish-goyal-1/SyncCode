@@ -12,14 +12,14 @@ import { useYjs } from '../hooks/useYjs';
 
 // Language options for the editor
 const LANGUAGES = [
-    { id: 'javascript', name: 'JavaScript', version: '18.15.0', extension: 'js' },
-    { id: 'python', name: 'Python', version: '3.10.0', extension: 'py' },
-    { id: 'java', name: 'Java', version: '15.0.2', extension: 'java' },
-    { id: 'cpp', name: 'C++', version: '10.2.0', extension: 'cpp' },
-    { id: 'c', name: 'C', version: '10.2.0', extension: 'c' },
-    { id: 'typescript', name: 'TypeScript', version: '5.0.3', extension: 'ts' },
-    { id: 'go', name: 'Go', version: '1.16.2', extension: 'go' },
-    { id: 'rust', name: 'Rust', version: '1.68.2', extension: 'rs' },
+    { id: 'javascript', name: 'JavaScript', version: '18.x', extension: 'js' },
+    { id: 'python', name: 'Python', version: '3.10', extension: 'py' },
+    { id: 'java', name: 'Java', version: '17', extension: 'java' },
+    { id: 'cpp', name: 'C++', version: 'GCC 11', extension: 'cpp' },
+    { id: 'c', name: 'C', version: 'GCC 11', extension: 'c' },
+    { id: 'typescript', name: 'TypeScript', version: '3.7', extension: 'ts' },
+    { id: 'go', name: 'Go', version: '1.16', extension: 'go' },
+    { id: 'rust', name: 'Rust', version: '1.68', extension: 'rs' },
 ];
 
 // Language-specific starter templates
@@ -475,22 +475,16 @@ function EditorPage() {
         const startTime = Date.now();
 
         try {
-            const langConfig = LANGUAGES.find((l) => l.id === language);
-
-            const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+            const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+            const response = await fetch(`${serverUrl}/api/execute`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    language: language,
-                    version: langConfig?.version || '*',
-                    files: [
-                        {
-                            content: code,
-                        },
-                    ],
-                    stdin: stdin,
+                    language,
+                    code,
+                    stdin,
                 }),
             });
 

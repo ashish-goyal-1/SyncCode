@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@y/websocket-server": "^0.1.1",
+    "axios": "^1.13.5",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",

@@ -36,9 +36,10 @@ SyncCode is a browser-based collaborative code editor that enables multiple user
 │         └──────────────────┴────────────────────────┘                    │
 │                            │                                             │
 │                   ┌────────▼────────┐                                    │
-│                   │   Piston API    │                                    │
-│                   │ (Code Execution)│                                    │
+│                   │   JDoodle API   │                                    │
+│                   │ (Proxied via SN)│                                    │
 │                   └─────────────────┘                                    │
+
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -85,12 +86,12 @@ SyncCode is a browser-based collaborative code editor that enables multiple user
                                │  └───────────────┘  │
                                └─────────────────────┘
                                           │
-                                          ▼
-                               ┌─────────────────────┐
-                               │   Piston API        │
-                               │   (External)        │
-                               │   Code Execution    │
-                               └─────────────────────┘
+                                           ▼
+                                ┌─────────────────────┐
+                                │   JDoodle API       │
+                                │   (External)        │
+                                │   Code Execution    │
+                                └─────────────────────┘
 ```
 
 ---
@@ -127,7 +128,8 @@ SyncCode is a browser-based collaborative code editor that enables multiple user
 
 | Service | Purpose |
 |---------|---------|
-| **Piston API** | Sandboxed code execution (8+ languages) |
+| **JDoodle API** | Code execution engine (proxied) |
+
 | **Vercel** | Frontend hosting (CDN) |
 | **Render** | Backend hosting (WebSocket support) |
 
@@ -371,31 +373,33 @@ const rooms = new Map();
  └───────────┬─────────────┘
              │
              ▼
- ┌─────────────────────────┐
- │ Build Piston Request    │
- │ {                       │
- │   language: "cpp",      │
- │   version: "*",         │
- │   files: [{ content }], │
- │   stdin: userInput      │
- │ }                       │
- └───────────┬─────────────┘
+  ┌─────────────────────────┐
+  │ Build JDoodle Request   │
+  │ (Server Proxy)          │
+  │ {                       │
+  │   script: code,         │
+  │   language: "cpp17",    │
+  │   versionIndex: "0",    │
+  │   stdin: userInput      │
+  │ }                       │
+  └───────────┬─────────────┘
+
              │
              ▼ HTTPS POST
- ┌─────────────────────────┐
- │ Piston API              │ ← https://emkc.org/api/v2/piston/execute
- │ (Sandboxed Execution)   │
- │                         │
- │ • Compile (if needed)   │
- │ • Execute in container  │
- │ • Return stdout/stderr  │
- └───────────┬─────────────┘
+  ┌─────────────────────────┐
+  │ JDoodle API             │ ← https://api.jdoodle.com/v1/execute
+  │ (OAuth Auth)            │
+  │                         │
+  │ • Compile (if needed)   │
+  │ • Execute in sandbox    │
+  │ • Return output         │
+  └───────────┬─────────────┘
+
              │
              ▼
  ┌─────────────────────────┐
  │ Parse Response          │
  │ {                       │
- │   run: {                │
  │     stdout: "Hello!",   │
  │     stderr: "",         │
  │     code: 0             │
@@ -433,7 +437,8 @@ const rooms = new Map();
 |---------|------------|
 | XSS in chat | React's automatic escaping |
 | Username injection | Validation + sanitization |
-| Code injection | Code runs in Piston sandbox, not browser |
+| Code injection | Code runs in JDoodle sandbox, not Sn server |
+
 
 ### Server-Side
 
@@ -445,11 +450,10 @@ const rooms = new Map();
 
 ### Code Execution
 
-| Concern | Mitigation |
-|---------|------------|
-| Malicious code | Piston runs in isolated containers |
-| Resource exhaustion | Piston enforces CPU/memory/time limits |
-| Infinite loops | Piston timeout (~30 seconds) |
+| Malicious code | JDoodle runs in isolated sandboxes |
+| Resource exhaustion | JDoodle enforces CPU/memory/time limits |
+| Infinite loops | JDoodle timeout |
+
 
 ---
 
@@ -501,6 +505,8 @@ VITE_SERVER_URL=https://synccode-server-3xzv.onrender.com
 ```
 PORT=10000
 CLIENT_URL=https://synccode-five.vercel.app
+JDOODLE_CLIENT_ID=...
+JDOODLE_CLIENT_SECRET=...
 ```
 
 ---

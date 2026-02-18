@@ -70,10 +70,11 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 ### ⚡ Code Execution
 | Feature | Description |
 |---------|-------------|
-| **Run Code** | Execute code directly via Piston API |
+| **Run Code** | Execute code directly via JDoodle API (Server-side Proxy) |
 | **8 Languages** | JavaScript, Python, C++, Java, C, TypeScript, Go, Rust |
 | **stdin Support** | Input handling for interactive programs |
 | **Execution Time** | Shows how long your code took to run |
+
 
 ### 🎯 Interview Mode
 | Feature | Description |
@@ -97,14 +98,13 @@ A real-time collaborative code editor for **coding interviews**, **pair programm
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|------------|
 | **Frontend** | React 18, Vite, Tailwind CSS |
 | **Editor** | Monaco Editor (VS Code engine) |
 | **Real-Time Sync** | Yjs CRDT + y-monaco binding |
 | **Presence & Chat** | Socket.io |
 | **Backend** | Node.js, Express, @y/websocket-server |
-| **Code Execution** | Piston API (sandboxed) |
+| **Code Execution** | JDoodle API (Proxied via Backend) |
+
 
 > 🔬 **Why Yjs?** Same CRDT technology used by Figma, VS Code Live Share, and CodeSandbox.
 
@@ -146,11 +146,12 @@ npm run dev
 
 ### Environment Variables
 
-| Variable | Location | Default | Description |
-|----------|----------|---------|-------------|
 | `PORT` | server | 5000 | Server port |
 | `CLIENT_URL` | server | http://localhost:5173 | CORS origin |
+| `JDOODLE_CLIENT_ID` | server | - | JDoodle OAuth ID |
+| `JDOODLE_CLIENT_SECRET` | server | - | JDoodle OAuth Secret |
 | `VITE_SERVER_URL` | client | http://localhost:5000 | Backend URL |
+
 
 ### Deployment
 
@@ -292,5 +293,6 @@ MIT License - feel free to use for your own projects!
 
 - [Yjs](https://github.com/yjs/yjs) — CRDT framework
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/) — VS Code's editor
-- [Piston API](https://github.com/engineer-man/piston) — Code execution
+- [JDoodle API](https://www.jdoodle.com/compiler-api/) — Code execution engine
 - [Socket.io](https://socket.io/) — Real-time communication
+

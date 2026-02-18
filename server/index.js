@@ -8,10 +8,73 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.send('SyncCode Server Running');
+});
+
+const axios = require('axios');
 
 // Environment variables with defaults
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const JDOODLE_CLIENT_ID = process.env.JDOODLE_CLIENT_ID;
+const JDOODLE_CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET;
+
+// Code Execution Route (Proxies to Glot.io - no API key needed)
+app.post('/api/execute', async (req, res) => {
+  const { language, code, stdin } = req.body;
+
+  // Language Map (SyncCode ID -> Glot.io language + file extension)
+  const LANGUAGE_MAP = {
+    javascript: { lang: 'javascript', ext: 'js' },
+    python: { lang: 'python', ext: 'py' },
+    java: { lang: 'java', ext: 'java' },
+    cpp: { lang: 'cpp', ext: 'cpp' },
+    c: { lang: 'c', ext: 'c' },
+    typescript: { lang: 'typescript', ext: 'ts' },
+    go: { lang: 'go', ext: 'go' },
+    rust: { lang: 'rust', ext: 'rs' },
+  };
+
+  const config = LANGUAGE_MAP[language];
+
+  if (!config) {
+    return res.status(400).json({ message: 'Unsupported language' });
+  }
+
+  try {
+    const response = await axios.post(
+      `https://glot.io/run/${config.lang}`,
+      {
+        files: [{ name: `main.${config.ext}`, content: code }],
+        stdin: stdin || '',
+      },
+      { timeout: 15000 }
+    );
+
+    const stdout = response.data.stdout || '';
+    const stderr = response.data.stderr || '';
+    const error = response.data.error || '';
+
+    res.json({
+      run: {
+        stdout,
+        stderr: stderr || error,
+        output: stdout || stderr || error,
+      }
+    });
+
+  } catch (error) {
+    console.error('Glot.io Error:', error.response?.data || error.message);
+    res.status(500).json({
+      message: 'Execution failed',
+      error: error.response?.data?.error || error.message
+    });
+  }
+});
+
 
 const server = http.createServer(app);
 
